@@ -1,0 +1,9 @@
+*.ez
+/.fetch
+/_build/
+/cover/
+/deps/
+/doc/
+/tmp/
+erl_crash.dump
+specter-*.tar
