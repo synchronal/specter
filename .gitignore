@@ -4,6 +4,7 @@
 /cover/
 /deps/
 /doc/
+/priv/native/
 /tmp/
 erl_crash.dump
 specter-*.tar
