@@ -1,6 +1,6 @@
 # Specter
 
-**TODO: Add description**
+Headless webrtc client.
 
 ## Installation
 
