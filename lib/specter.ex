@@ -3,16 +3,8 @@ defmodule Specter do
   Documentation for `Specter`.
   """
 
-  @doc """
-  Hello world.
+  alias Specter.Native
 
-  ## Examples
-
-      iex> Specter.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  @spec init() :: {:ok, reference()}
+  def init, do: Native.init()
 end
