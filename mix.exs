@@ -19,6 +19,8 @@ defmodule Specter.MixProject do
 
   defp deps do
     [
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:rustler, "~> 0.23"}
     ]
   end

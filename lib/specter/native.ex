@@ -1,4 +1,5 @@
 defmodule Specter.Native do
+  @moduledoc false
   use Rustler, otp_app: :specter, crate: :specter_nif
 
   @spec init() :: {:ok, reference()}
