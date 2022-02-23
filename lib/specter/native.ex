@@ -6,7 +6,9 @@ defmodule Specter.Native do
 
   @spec init() :: {:ok, t()}
   def init(args \\ []) do
-    args = Keyword.put_new(args, :ice_servers, ["stun:stun.l.google.com:19302"])
+    args =
+      Keyword.put_new(args, :ice_servers, Application.get_env(:specter, :default_ice_servers))
+
     __init__(Enum.into(args, %{}))
   end
 
