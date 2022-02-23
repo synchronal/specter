@@ -1,5 +1,10 @@
 rustler::atoms! {
     ok,
     error,
-    lock_fail
+
+    lock_fail,
+
+    // config
+    ice_servers,
+    invalid_configuration,
 }
