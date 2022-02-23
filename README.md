@@ -1,6 +1,11 @@
 # Specter
 
-Headless webrtc client.
+Wrapper for [webrtc.rs](https://webrtc.rs) as an Elixir NIF, using
+Rustler.
+
+This library is a low-level interface to the data structures and
+entities provided by Rust, with a minimal set of opinions.
+
 
 ## Installation
 
@@ -14,7 +19,7 @@ end
 
 ## Checklist
 
-- [ ] `Specter.init/1` takes (opts)
+- [x] `Specter.init/1` takes (opts)
   - opts: (`ice_servers`)
 - [ ] `Specter.new_rtc_peer_connection/1` (ref), returning UUID
 - [ ] `Specter.set_remote_description/3` (ref, uuid, offer)
