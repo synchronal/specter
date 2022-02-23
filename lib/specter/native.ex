@@ -4,7 +4,7 @@ defmodule Specter.Native do
 
   @type t() :: reference()
 
-  @spec init() :: {:ok, t()}
+  @spec init(Specter.init_options()) :: {:ok, t()} | {:error, term()}
   def init(args \\ []) do
     args =
       Keyword.put_new(args, :ice_servers, Application.get_env(:specter, :default_ice_servers))
@@ -13,6 +13,7 @@ defmodule Specter.Native do
   end
 
   @doc false
+  @spec __init__(Specter.init_options()) :: {:ok, t()} | {:error, term()}
   def __init__(_args), do: error()
 
   defp error, do: :erlang.nif_error(:nif_not_loaded)
