@@ -24,6 +24,11 @@ defmodule Specter do
 
   alias Specter.Native
 
+  @typedoc """
+  `t:Specter.t/0` references are returned from `init/1`, and represent the
+  state held in the NIF. All functions interacting with NIF state take a
+  `t:Specter.t/0` as their first argument.
+  """
   @opaque t() :: Specter.Native.t()
 
   @typedoc """
