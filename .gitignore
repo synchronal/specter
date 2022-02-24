@@ -6,6 +6,7 @@
 /cover/
 /deps/
 /doc/
+/priv/plts/
 /priv/native/
 /tmp/
 erl_crash.dump

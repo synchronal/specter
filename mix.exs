@@ -45,12 +45,19 @@ defmodule Specter.MixProject do
   defp dialyzer do
     [
       plt_add_apps: [:ex_unit, :mix],
-      plt_add_deps: :app_tree
+      plt_add_deps: :app_tree,
+      plt_file: {:no_warn, "priv/plts/#{otp_version()}/dialyzer.plt"}
     ]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp otp_version do
+    Path.join([:code.root_dir(), "releases", :erlang.system_info(:otp_release), "OTP_VERSION"])
+    |> File.read!()
+    |> String.trim()
+  end
 
   defp package do
     [
