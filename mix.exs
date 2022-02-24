@@ -70,7 +70,9 @@ defmodule Specter.MixProject do
         config
         lib
         mix.exs
-        native
+        native/specter_nif/src
+        native/specter_nif/Cargo.toml
+        native/specter_nif/Cargo.lock
       )
     ]
   end
