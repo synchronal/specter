@@ -64,7 +64,7 @@ jobs:
         run: mix test --color --cover
         working-directory: .
       - name: Run mix audit
-        run: mix deps.audit
+        run: MIX_ENV=dev mix deps.audit
         working-directory: .
       - name: Warnings as errors
         run: mix compile --force --warnings-as-errors
@@ -103,8 +103,11 @@ jobs:
       - name: Run dialyzer
         run: mix dialyzer
         working-directory: .
-      - name: Check formatting
+      - name: Check Elixir formatting
         run: mix format --check-formatted
+        working-directory: .
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path native/specter_nif/Cargo.toml --check
         working-directory: .
   publish:
     name: Publish to Hex

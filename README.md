@@ -52,6 +52,19 @@ asdf plugin-add erlang
 asdf plugin-add elixir
 asdf plugin-add rust
 
-asdf install
+bin/dev/doctor
 ```
 
+CI will run tests and audit the repository, but to make sure all checks locally,
+the following commands can be run:
+
+```shell
+bin/dev/audit
+bin/dev/test
+```
+
+The following script is encouraged to run all checks as a part of pushing commits:
+
+```shell
+bin/dev/shipit
+```
