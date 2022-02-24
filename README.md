@@ -21,6 +21,7 @@ end
 
 - [x] `Specter.init/1` takes (opts)
   - opts: (`ice_servers`)
+- [ ] `Specter.config/1` (ref), returning `Specter.Config.t()`
 - [ ] `Specter.new_rtc_peer_connection/1` (ref), returning UUID
 - [ ] `Specter.set_remote_description/3` (ref, uuid, offer)
 - [ ] `Specter.create_answer/3` (ref, uuid, opts)
@@ -33,4 +34,18 @@ end
   - opts: (`voice_activity_detection`: `bool`, `ice_restart`: `bool`)
 - [ ] `Specter.local_description/2`
 - [ ] `Specter.close/2`  (ref, uuid)
+
+
+## Development
+
+Development of `Specter` depends on Elixir, Erlang, and Rust being available
+in the environment. Suggested setup:
+
+```shell
+asdf plugin-add erlang
+asdf plugin-add elixir
+asdf plugin-add rust
+
+asdf install
+```
 

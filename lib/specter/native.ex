@@ -4,6 +4,10 @@ defmodule Specter.Native do
 
   @type t() :: reference()
 
+  @doc """
+  Initialize the NIF with RTC configuration, registering the current
+  process for callbacks.
+  """
   @spec init(Specter.init_options()) :: {:ok, t()} | {:error, term()}
   def init(args \\ []) do
     args = default_config(args)
