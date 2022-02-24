@@ -152,6 +152,19 @@ jobs:
         with:
           path: deps
           key: ${{ runner.os }}-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
+      - name: Cache _build
+        uses: actions/cache@v2
+        with:
+          path: _build
+          key: ${{ runner.os }}-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
+      - name: Cache cargo
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/specter_nif/target
+          key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Publish to Hex
         uses: ./.github/publish
         with:
