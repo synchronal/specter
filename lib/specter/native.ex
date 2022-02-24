@@ -14,6 +14,12 @@ defmodule Specter.Native do
     __init__(Enum.into(args, %{}))
   end
 
+  @doc """
+  Given an initialized NIF, get the current config back out into Elixir.
+  """
+  @spec config(t()) :: Specter.Config.t()
+  def config(_ref), do: error()
+
   @doc false
   @spec __init__(Specter.init_options()) :: {:ok, t()} | {:error, term()}
   def __init__(_args), do: error()

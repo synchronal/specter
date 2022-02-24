@@ -51,4 +51,7 @@ defmodule Specter do
   @spec init() :: {:ok, t()}
   @spec init(init_options()) :: {:ok, t()}
   def init(args \\ []), do: Native.init(args)
+
+  @spec config(t()) :: Specter.Config.t()
+  def config(ref), do: Native.config(ref)
 end
