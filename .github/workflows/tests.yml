@@ -31,6 +31,14 @@ jobs:
         with:
           path: _build
           key: ${{ runner.os }}-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
+      - name: Cache cargo
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/specter_nif/target
+          key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Install dependencies
         run: mix deps.get
         working-directory: .
@@ -60,6 +68,14 @@ jobs:
         with:
           path: _build
           key: ${{ runner.os }}-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
+      - name: Cache cargo
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/specter_nif/target
+          key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Run tests
         run: mix test --color --cover
         working-directory: .
@@ -92,6 +108,14 @@ jobs:
         with:
           path: _build
           key: ${{ runner.os }}-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
+      - name: Cache cargo
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/specter_nif/target
+          key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache PLTs
         uses: actions/cache@v2
         with:
