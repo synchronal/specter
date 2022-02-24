@@ -11,6 +11,6 @@ fn on_load(env: Env, _info: Term) -> bool {
 
 rustler::init!(
     "Elixir.Specter.Native",
-    [state::init, state::config],
+    [state::init, state::config, state::new_media_engine],
     load = on_load
 );

@@ -9,8 +9,9 @@ defmodule Specter.MixProject do
       app: :specter,
       deps: deps(),
       description: description(),
+      dialyzer: dialyzer(),
       elixir: "~> 1.13",
-      package: package(),
+      elixirc_paths: elixirc_paths(Mix.env()),
       homepage_url: @scm_url,
       package: package(),
       preferred_cli_env: [credo: :test, dialyzer: :test, docs: :dev],
@@ -39,6 +40,16 @@ defmodule Specter.MixProject do
     do: """
     A rustler nif wrapping webrtc.rs.
     """
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:ex_unit, :mix],
+      plt_add_deps: :app_tree
+    ]
+  end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp package do
     [

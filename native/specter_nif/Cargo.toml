@@ -11,4 +11,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rustler = "0.23.0"
+uuid = "0.8"
 webrtc = "0.4.0"

@@ -16,9 +16,19 @@ defmodule Specter.Native do
 
   @doc """
   Given an initialized NIF, get the current config back out into Elixir.
+
+  - https://github.com/webrtc-rs/webrtc/blob/master/src/peer_connection/configuration.rs
   """
-  @spec config(t()) :: Specter.Config.t()
+  @spec config(t()) :: {:ok, Specter.Config.t()} | {:error, term()}
   def config(_ref), do: error()
+
+  @doc """
+  A media engine with default codecs configured.
+
+  - https://github.com/webrtc-rs/webrtc/blob/master/src/api/media_engine/mod.rs
+  """
+  @spec new_media_engine(t()) :: {:ok, Specter.uuid()}
+  def new_media_engine(_ref), do: error()
 
   @doc false
   @spec __init__(Specter.init_options()) :: {:ok, t()} | {:error, term()}

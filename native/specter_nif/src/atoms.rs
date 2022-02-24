@@ -7,4 +7,6 @@ rustler::atoms! {
     // config
     ice_servers,
     invalid_configuration,
+
+    webrtc_error,
 }

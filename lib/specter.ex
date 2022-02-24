@@ -10,7 +10,8 @@ defmodule Specter do
   A process initializes Specter via the `init/1` function, which registers the
   current process for callbacks that may be triggered via webrtc entities.
 
-      iex> {:ok, _specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
+      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
+      iex> {:ok, _uuid} = Specter.new_media_engine(specter)
 
   ## Thoughts
 
@@ -45,6 +46,14 @@ defmodule Specter do
   """
   @type init_options() :: [] | [ice_servers: [ice_server()]]
 
+  @typedoc """
+  While entities managed by Specter are generally accessed via the
+  `t:Specter.t/0` returned from `init/1`, specific entities are accessed
+  via UUIDs returned from the functions used to initialize them (e.g.
+  `new_rtc_peer_connection/1`).
+  """
+  @type uuid() :: String.t()
+
   @doc """
   Initialize the library. This registers the calling process to receive
   callback messages to `handle_info/2`.
@@ -54,9 +63,15 @@ defmodule Specter do
   | `ice_servers` | `list(String.t())` | `["stun:stun.l.google.com:19302"]` |
   """
   @spec init() :: {:ok, t()}
-  @spec init(init_options()) :: {:ok, t()}
+  @spec init(init_options()) :: {:ok, t()} | {:error, term()}
   def init(args \\ []), do: Native.init(args)
 
-  @spec config(t()) :: Specter.Config.t()
+  @doc """
+  Returns the currently
+  """
+  @spec config(t()) :: {:ok, Specter.Config.t()} | {:error, term()}
   def config(ref), do: Native.config(ref)
+
+  @spec new_media_engine(t()) :: {:ok, uuid()}
+  def new_media_engine(ref), do: Native.new_media_engine(ref)
 end
