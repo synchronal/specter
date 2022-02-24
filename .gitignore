@@ -1,4 +1,6 @@
 *.ez
+.medic/.doctor.out
+.medic/skipped
 /.fetch
 /_build/
 /cover/
