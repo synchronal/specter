@@ -114,6 +114,8 @@ fn new_registry<'a>(
         Ok(guard) => guard,
     };
 
+    // This could stand some error handling. The match implementation
+    // fails with "creates a temporary which is freed while still in use."
     let mid = &media_engine_uuid.clone().decode().unwrap();
     let media_engine = match state.get_media_engine(mid) {
         None => return Err(atoms::not_found()),
