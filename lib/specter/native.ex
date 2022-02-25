@@ -27,8 +27,19 @@ defmodule Specter.Native do
 
   - https://github.com/webrtc-rs/webrtc/blob/master/src/api/media_engine/mod.rs
   """
-  @spec new_media_engine(t()) :: {:ok, Specter.uuid()}
+  @spec new_media_engine(t()) :: {:ok, Specter.media_engine_t()}
   def new_media_engine(_ref), do: error()
+
+  @doc """
+  Creates an intercepter registry. This is a user configurable RTP/RTCP pipeline,
+  and provides features such as NACKs and RTCP Reports.
+
+  A registry must be created for each peer connection.
+
+  - https://github.com/webrtc-rs/webrtc/blob/master/src/api/interceptor_registry/mod.rs
+  """
+  @spec new_registry(t(), Specter.media_engine_t()) :: {:ok, Specter.registry_t()}
+  def new_registry(_ref, _media_engine), do: error()
 
   @doc false
   @spec __init__(Specter.init_options()) :: {:ok, t()} | {:error, term()}

@@ -11,7 +11,8 @@ defmodule Specter do
   current process for callbacks that may be triggered via webrtc entities.
 
       iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
-      iex> {:ok, _uuid} = Specter.new_media_engine(specter)
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, _registry} = Specter.new_registry(specter, media_engine)
 
   ## Thoughts
 
@@ -31,6 +32,16 @@ defmodule Specter do
   `t:Specter.t/0` as their first argument.
   """
   @opaque t() :: Specter.Native.t()
+
+  @typedoc """
+  `t:Specter.media_engine_t/0` represents an instantiated MediaEngine managed in the NIF.
+  """
+  @opaque media_engine_t() :: uuid()
+
+  @typedoc """
+  `t:Specter.registry_t/0` represent an instantiated intercepter Registry managed in the NIF.
+  """
+  @opaque registry_t() :: uuid()
 
   @typedoc """
   A STUN uri in the form `protocol:host:port`, where protocol is either
@@ -67,11 +78,27 @@ defmodule Specter do
   def init(args \\ []), do: Native.init(args)
 
   @doc """
-  Returns the currently
+  Returns the current configuration for the initialized NIF.
   """
   @spec config(t()) :: {:ok, Specter.Config.t()} | {:error, term()}
   def config(ref), do: Native.config(ref)
 
+  @doc """
+  Creates a MediaEngine to be configured and used by later function calls.
+  Codecs and other high level configuration are done on instances of MediaEngines.
+  A MediaEngine is combined with a Registry in an entity called an APIBuilder,
+  which is then used to create RTCPeerConnections.
+  """
   @spec new_media_engine(t()) :: {:ok, uuid()}
   def new_media_engine(ref), do: Native.new_media_engine(ref)
+
+  @doc """
+  Creates an intercepter registry. This is a user configurable RTP/RTCP pipeline,
+  and provides features such as NACKs and RTCP Reports.
+
+  The registry is combined with a MediaEngine in an APIBuilder, which is then used
+  to create RTCPeerConnections.
+  """
+  @spec new_registry(t(), media_engine_t()) :: {:ok, uuid()}
+  def new_registry(ref, media_engine), do: Native.new_registry(ref, media_engine)
 end

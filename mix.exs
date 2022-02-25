@@ -33,7 +33,8 @@ defmodule Specter.MixProject do
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.28", only: [:dev], runtime: false},
       {:mix_audit, "~> 1.0", only: [:dev], runtime: false},
-      {:rustler, "~> 0.23"}
+      {:rustler, "~> 0.23"},
+      {:uuid, "~> 1.1", only: [:test]}
     ]
   end
 

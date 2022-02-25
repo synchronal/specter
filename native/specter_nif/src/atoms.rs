@@ -8,5 +8,6 @@ rustler::atoms! {
     ice_servers,
     invalid_configuration,
 
+    not_found,
     webrtc_error,
 }
