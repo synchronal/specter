@@ -60,4 +60,60 @@ defmodule SpecterTest do
       assert {:error, :not_found} = Specter.new_registry(specter, UUID.uuid4())
     end
   end
+
+  describe "new_api" do
+    setup :initialize_specter
+
+    test "returns a UUID, and consumes the media engine and registry", %{specter: specter} do
+      assert {:ok, media_engine} = Specter.new_media_engine(specter)
+      assert {:ok, registry} = Specter.new_registry(specter, media_engine)
+      assert {:ok, api_builder} = Specter.new_api(specter, media_engine, registry)
+      assert is_binary(api_builder)
+      assert String.match?(api_builder, @uuid_regex)
+
+      refute Specter.media_engine_exists?(specter, media_engine)
+      refute Specter.registry_exists?(specter, registry)
+    end
+
+    test "returns {:error, :not_found} when given a random media engine id", %{specter: specter} do
+      assert {:ok, media_engine} = Specter.new_media_engine(specter)
+      assert {:ok, registry} = Specter.new_registry(specter, media_engine)
+
+      assert {:error, :not_found} = Specter.new_api(specter, UUID.uuid4(), registry)
+    end
+
+    test "returns {:error, :not_found} when given a random registry id", %{specter: specter} do
+      assert {:ok, media_engine} = Specter.new_media_engine(specter)
+      assert {:ok, _registry} = Specter.new_registry(specter, media_engine)
+
+      assert {:error, :not_found} = Specter.new_api(specter, media_engine, UUID.uuid4())
+    end
+  end
+
+  describe "media_engine_exists?" do
+    setup :initialize_specter
+
+    test "is false when the media engine does not exist", %{specter: specter} do
+      refute Specter.media_engine_exists?(specter, UUID.uuid4())
+    end
+
+    test "is true when the media engine does not exist", %{specter: specter} do
+      assert {:ok, media_engine} = Specter.new_media_engine(specter)
+      assert Specter.media_engine_exists?(specter, media_engine)
+    end
+  end
+
+  describe "registry_exists?" do
+    setup :initialize_specter
+
+    test "is false when the registry does not exist", %{specter: specter} do
+      refute Specter.registry_exists?(specter, UUID.uuid4())
+    end
+
+    test "is true when the media engine does not exist", %{specter: specter} do
+      assert {:ok, media_engine} = Specter.new_media_engine(specter)
+      assert {:ok, registry} = Specter.new_registry(specter, media_engine)
+      assert Specter.registry_exists?(specter, registry)
+    end
+  end
 end

@@ -24,7 +24,7 @@ end
 - [x] `Specter.config/1` (ref), returning `Specter.Config.t()`
 - [x] `Specter.new_media_engine/1` (ref), returning UUID
 - [x] `Specter.new_registry/1` (ref), returning UUID
-- [ ] `Specter.new_api_builder/3` (ref, uuid, uuid), returning UUID
+- [x] `Specter.new_api/3` (ref, uuid, uuid), returning UUID
   - arg1: media engine uuid
   - arg2: registry uuid
 - [ ] `Specter.new_rtc_peer_connection/2` (ref, uuid), returning UUID

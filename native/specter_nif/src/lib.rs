@@ -14,8 +14,11 @@ rustler::init!(
     [
         state::init,
         state::config,
+        state::media_engine_exists,
         state::new_media_engine,
-        state::new_registry
+        state::new_registry,
+        state::new_api,
+        state::registry_exists,
     ],
     load = on_load
 );

@@ -6,24 +6,44 @@ use std::sync::Mutex;
 use uuid::Uuid;
 use webrtc::api::interceptor_registry::register_default_interceptors;
 use webrtc::api::media_engine::MediaEngine;
+use webrtc::api::{APIBuilder, API};
 use webrtc::ice_transport::ice_server::RTCIceServer;
 use webrtc::interceptor::registry::Registry;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 
 pub struct State {
+    api_builders: HashMap<String, API>,
     config: RTCConfiguration,
     media_engines: HashMap<String, MediaEngine>,
     registries: HashMap<String, Registry>,
 }
 
 impl State {
+    pub(crate) fn add_api_builder(&mut self, uuid: &String, api: API) -> &mut State {
+        self.api_builders.insert(uuid.clone(), api);
+        self
+    }
+
     pub(crate) fn add_media_engine(&mut self, uuid: &String, engine: MediaEngine) -> &mut State {
         self.media_engines.insert(uuid.clone(), engine);
         self
     }
 
-    pub(crate) fn get_media_engine(&mut self, uuid: &String) -> Option<&mut MediaEngine> {
-        self.media_engines.get_mut(uuid)
+    pub(crate) fn get_media_engine<'a>(&mut self, uuid: Term<'a>) -> Option<&MediaEngine> {
+        // This could stand some error handling. The match implementation
+        // fails with "creates a temporary which is freed while still in use."
+        let mid: &String = &uuid.clone().decode().unwrap();
+        self.media_engines.get(mid)
+    }
+
+    pub(crate) fn get_media_engine_mut<'a>(&mut self, uuid: Term<'a>) -> Option<&mut MediaEngine> {
+        let mid: &String = &uuid.clone().decode().unwrap();
+        self.media_engines.get_mut(mid)
+    }
+
+    pub(crate) fn remove_media_engine<'a>(&mut self, uuid: Term<'a>) -> Option<MediaEngine> {
+        let mid: &String = &uuid.clone().decode().unwrap();
+        self.media_engines.remove(mid)
     }
 
     pub(crate) fn add_registry(&mut self, uuid: &String, registry: Registry) -> &mut State {
@@ -31,13 +51,19 @@ impl State {
         self
     }
 
-    pub(crate) fn _get_registry(&mut self, uuid: &String) -> Option<&mut Registry> {
-        self.registries.get_mut(uuid)
+    pub(crate) fn get_registry<'a>(&mut self, uuid: Term<'a>) -> Option<&Registry> {
+        let rid: &String = &uuid.clone().decode().unwrap();
+        self.registries.get(rid)
+    }
+
+    pub(crate) fn remove_registry<'a>(&mut self, uuid: Term<'a>) -> Option<Registry> {
+        let rid: &String = &uuid.clone().decode().unwrap();
+        self.registries.remove(rid)
     }
 }
 
 // The resource which will be wrapped in an ResourceArc and returned to
-// Elixir as a reference.:w
+// Elixir as a reference.
 pub struct StateResource(Mutex<State>);
 
 // Initialize the NIF, returning a reference to Elixir that can be
@@ -50,6 +76,7 @@ fn init<'a>(env: Env<'a>, opts: Term<'a>) -> Term<'a> {
     };
 
     let state = State {
+        api_builders: HashMap::new(),
         config: rtc_config,
         media_engines: HashMap::new(),
         registries: HashMap::new(),
@@ -93,7 +120,7 @@ fn new_media_engine<'a>(
         Ok(term) => term,
     }
 
-    let engine_id = Uuid::new_v4().to_hyphenated().to_string();
+    let engine_id = gen_uuid();
     state.add_media_engine(&engine_id, m);
     Ok(engine_id.encode(env))
 }
@@ -114,10 +141,7 @@ fn new_registry<'a>(
         Ok(guard) => guard,
     };
 
-    // This could stand some error handling. The match implementation
-    // fails with "creates a temporary which is freed while still in use."
-    let mid = &media_engine_uuid.clone().decode().unwrap();
-    let media_engine = match state.get_media_engine(mid) {
+    let media_engine = match state.get_media_engine_mut(media_engine_uuid) {
         None => return Err(atoms::not_found()),
         Some(m) => m,
     };
@@ -128,12 +152,100 @@ fn new_registry<'a>(
         Ok(term) => term,
     };
 
-    let registry_id = Uuid::new_v4().to_hyphenated().to_string();
+    let registry_id = gen_uuid();
     state.add_registry(&registry_id, registry);
     Ok(registry_id.encode(env))
 }
 
-// private
+// Create a new API. This is directly used when creating RTCPeerConnections.
+//
+// Open questions:
+// - This is used to create RTCPeerConnections. Is it used for anything else?
+// - I thought we needed to create a new registry for each PC. Does that
+//   mean we need to create a new one of these for each PC?
+#[rustler::nif]
+fn new_api<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<StateResource>,
+    media_engine_uuid: Term<'a>,
+    registry_uuid: Term<'a>,
+) -> Result<Term<'a>, Atom> {
+    let mut state = match resource.0.try_lock() {
+        Err(_) => return Err(atoms::lock_fail()),
+        Ok(guard) => guard,
+    };
+
+    let media_engine = match state.remove_media_engine(media_engine_uuid) {
+        None => return Err(atoms::not_found()),
+        Some(m) => m,
+    };
+
+    let registry = match state.remove_registry(registry_uuid) {
+        None => return Err(atoms::not_found()),
+        Some(r) => r,
+    };
+
+    let api = APIBuilder::new()
+        .with_media_engine(media_engine)
+        .with_interceptor_registry(registry)
+        .build();
+
+    let api_id = gen_uuid();
+    state.add_api_builder(&api_id, api);
+    Ok(api_id.encode(env))
+}
+
+// Returns true or false depending on whether the State hashmap owns a MediaEngine
+// for the given UUID.
+//
+// Some entities need to take ownership of a given MediaEngine, for example when
+// creating an API. After that happens, the MediaEngine will no longer be available
+// in the State hashmap.
+#[rustler::nif]
+fn media_engine_exists<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<StateResource>,
+    media_engine_uuid: Term<'a>,
+) -> Term<'a> {
+    let mut state = match resource.0.try_lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    match state.get_media_engine(media_engine_uuid) {
+        None => (atoms::ok(), false).encode(env),
+        Some(_m) => (atoms::ok(), true).encode(env),
+    }
+}
+
+// Returns true or false depending on whether the State hashmap owns a Registry
+// for the given UUID.
+//
+// See `media_engine_exists` for Notes.
+#[rustler::nif]
+fn registry_exists<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<StateResource>,
+    registry_uuid: Term<'a>,
+) -> Term<'a> {
+    let mut state = match resource.0.try_lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    match state.get_registry(registry_uuid) {
+        None => (atoms::ok(), false).encode(env),
+        Some(_r) => (atoms::ok(), true).encode(env),
+    }
+}
+
+//
+// PRIVATE
+//
+
+fn gen_uuid() -> String {
+    Uuid::new_v4().to_hyphenated().to_string()
+}
 
 fn parse_init_opts<'a>(env: Env<'a>, opts: Term<'a>) -> Result<RTCConfiguration, Atom> {
     if !opts.is_map() {
