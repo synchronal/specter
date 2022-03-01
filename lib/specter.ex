@@ -158,7 +158,7 @@ defmodule Specter do
       iex> {:ok, _api} = Specter.new_api(specter, media_engine, registry)
 
   """
-  @spec new_api(t(), media_engine_t(), registry_t()) :: {:ok, api_t()}
+  @spec new_api(t(), media_engine_t(), registry_t()) :: {:ok, api_t()} | {:error, term()}
   def new_api(ref, media_engine, registry),
     do: Native.new_api(ref, media_engine, registry)
 
@@ -174,7 +174,7 @@ defmodule Specter do
       iex> {:ok, _media_engine} = Specter.new_media_engine(specter)
 
   """
-  @spec new_media_engine(t()) :: {:ok, media_engine_t()}
+  @spec new_media_engine(t()) :: {:ok, media_engine_t()} | {:error, term()}
   def new_media_engine(ref), do: Native.new_media_engine(ref)
 
   @doc """
@@ -196,7 +196,7 @@ defmodule Specter do
       true
 
   """
-  @spec new_registry(t(), media_engine_t()) :: {:ok, registry_t()}
+  @spec new_registry(t(), media_engine_t()) :: {:ok, registry_t()} | {:error, term()}
   def new_registry(ref, media_engine), do: Native.new_registry(ref, media_engine)
 
   @doc """
