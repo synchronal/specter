@@ -110,6 +110,34 @@ defmodule Specter do
   def config(ref), do: Native.config(ref)
 
   @doc """
+  Returns true or false, depending on whether the media engine is available for
+  consumption, i.e. is initialized and has not been used by a function that takes
+  ownership of it.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> Specter.media_engine_exists?(specter, media_engine)
+      true
+
+      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
+      iex> Specter.media_engine_exists?(specter, UUID.uuid4())
+      false
+
+  """
+  @spec media_engine_exists?(t(), media_engine_t()) :: boolean() | no_return()
+  def media_engine_exists?(ref, media_engine) do
+    case Native.media_engine_exists(ref, media_engine) do
+      {:ok, value} ->
+        value
+
+      {:error, error} ->
+        raise "Unable to determine whether media engine exists:\n#{inspect(error)}"
+    end
+  end
+
+  @doc """
   An APIBuilder is used to create RTCPeerConnections. This accepts as parameters
   the output of `init/1`, `new_media_enine/1`, and `new_registry/2`.
 
@@ -170,34 +198,6 @@ defmodule Specter do
   """
   @spec new_registry(t(), media_engine_t()) :: {:ok, registry_t()}
   def new_registry(ref, media_engine), do: Native.new_registry(ref, media_engine)
-
-  @doc """
-  Returns true or false, depending on whether the media engine is available for
-  consumption, i.e. is initialized and has not been used by a function that takes
-  ownership of it.
-
-  ## Usage
-
-      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
-      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
-      iex> Specter.media_engine_exists?(specter, media_engine)
-      true
-
-      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
-      iex> Specter.media_engine_exists?(specter, UUID.uuid4())
-      false
-
-  """
-  @spec media_engine_exists?(t(), media_engine_t()) :: boolean() | no_return()
-  def media_engine_exists?(ref, media_engine) do
-    case Native.media_engine_exists(ref, media_engine) do
-      {:ok, value} ->
-        value
-
-      {:error, error} ->
-        raise "Unable to determine whether media engine exists:\n#{inspect(error)}"
-    end
-  end
 
   @doc """
   Returns true or false, depending on whether the registry is available for
