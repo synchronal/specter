@@ -77,7 +77,7 @@ jobs:
             native/specter_nif/target
           key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Run tests
-        run: mix test --color --cover
+        run: mix test --color
         working-directory: .
       - name: Run mix audit
         run: MIX_ENV=dev mix deps.audit
