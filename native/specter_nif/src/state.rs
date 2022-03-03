@@ -1,5 +1,5 @@
 use crate::atoms;
-use crate::specter_config::SpecterConfig;
+use crate::config::Config;
 use rustler::{Atom, Encoder, Env, ResourceArc, Term};
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -7,22 +7,29 @@ use uuid::Uuid;
 use webrtc::api::interceptor_registry::register_default_interceptors;
 use webrtc::api::media_engine::MediaEngine;
 use webrtc::api::{APIBuilder, API};
-use webrtc::ice_transport::ice_server::RTCIceServer;
 use webrtc::interceptor::registry::Registry;
-use webrtc::peer_connection::configuration::RTCConfiguration;
 
 pub struct State {
-    api_builders: HashMap<String, API>,
-    config: RTCConfiguration,
+    apis: HashMap<String, API>,
+    config: Config,
     media_engines: HashMap<String, MediaEngine>,
     registries: HashMap<String, Registry>,
 }
 
 impl State {
-    pub(crate) fn add_api_builder(&mut self, uuid: &String, api: API) -> &mut State {
-        self.api_builders.insert(uuid.clone(), api);
+    // API
+
+    pub(crate) fn add_api(&mut self, uuid: &String, api: API) -> &mut State {
+        self.apis.insert(uuid.clone(), api);
         self
     }
+
+    // pub(crate) fn get_api<'a>(&self, uuid: Term<'a>) -> Option<&API> {
+    //     let aid: &String = &uuid.clone().decode().unwrap();
+    //     self.apis.get(aid)
+    // }
+
+    // MediaEngine
 
     pub(crate) fn add_media_engine(&mut self, uuid: &String, engine: MediaEngine) -> &mut State {
         self.media_engines.insert(uuid.clone(), engine);
@@ -70,14 +77,14 @@ pub struct StateResource(Mutex<State>);
 // passed back into the NIF to retrieve or alter state.
 #[rustler::nif(name = "__init__")]
 fn init<'a>(env: Env<'a>, opts: Term<'a>) -> Term<'a> {
-    let rtc_config = match parse_init_opts(env, opts) {
+    let config = match parse_init_opts(env, opts) {
         Err(error) => return (atoms::error(), error).encode(env),
-        Ok(rtc_config) => rtc_config,
+        Ok(config) => config,
     };
 
     let state = State {
-        api_builders: HashMap::new(),
-        config: rtc_config,
+        apis: HashMap::new(),
+        config: config,
         media_engines: HashMap::new(),
         registries: HashMap::new(),
     };
@@ -86,15 +93,15 @@ fn init<'a>(env: Env<'a>, opts: Term<'a>) -> Term<'a> {
     (atoms::ok(), resource).encode(env)
 }
 
-#[rustler::nif]
-fn config<'a>(env: Env<'a>, resource: ResourceArc<StateResource>) -> Result<Term<'a>, Atom> {
+#[rustler::nif(name = "config")]
+fn get_config<'a>(env: Env<'a>, resource: ResourceArc<StateResource>) -> Result<Term<'a>, Atom> {
     let state = match resource.0.try_lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
 
-    let nif_config = SpecterConfig::from_rtc_configuration(&state.config);
-    Ok(nif_config.encode(env))
+    let config = &state.config;
+    Ok(config.encode(env))
 }
 
 // Create a MediaEngine object to configure the default supported codecs.
@@ -191,7 +198,7 @@ fn new_api<'a>(
         .build();
 
     let api_id = gen_uuid();
-    state.add_api_builder(&api_id, api);
+    state.add_api(&api_id, api);
     Ok(api_id.encode(env))
 }
 
@@ -247,7 +254,7 @@ fn gen_uuid() -> String {
     Uuid::new_v4().to_hyphenated().to_string()
 }
 
-fn parse_init_opts<'a>(env: Env<'a>, opts: Term<'a>) -> Result<RTCConfiguration, Atom> {
+fn parse_init_opts<'a>(env: Env<'a>, opts: Term<'a>) -> Result<Config, Atom> {
     if !opts.is_map() {
         return Err(atoms::invalid_configuration());
     };
@@ -257,13 +264,7 @@ fn parse_init_opts<'a>(env: Env<'a>, opts: Term<'a>) -> Result<RTCConfiguration,
         Ok(servers) => servers.decode().unwrap(),
     };
 
-    let rtc_config = RTCConfiguration {
-        ice_servers: vec![RTCIceServer {
-            urls: ice_servers,
-            ..Default::default()
-        }],
-        ..Default::default()
-    };
+    let config = Config { ice_servers };
 
-    Ok(rtc_config)
+    Ok(config)
 }

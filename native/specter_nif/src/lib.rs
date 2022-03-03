@@ -1,7 +1,7 @@
 use rustler::{Env, Term};
 
 mod atoms;
-mod specter_config;
+mod config;
 mod state;
 
 fn on_load(env: Env, _info: Term) -> bool {
@@ -12,12 +12,12 @@ fn on_load(env: Env, _info: Term) -> bool {
 rustler::init!(
     "Elixir.Specter.Native",
     [
+        state::get_config,
         state::init,
-        state::config,
         state::media_engine_exists,
+        state::new_api,
         state::new_media_engine,
         state::new_registry,
-        state::new_api,
         state::registry_exists,
     ],
     load = on_load
