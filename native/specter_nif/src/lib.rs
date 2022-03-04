@@ -1,3 +1,5 @@
+#![feature(mutex_unlock)]
+
 use rustler::{Env, Term};
 
 mod atoms;
@@ -5,7 +7,7 @@ mod config;
 mod state;
 
 fn on_load(env: Env, _info: Term) -> bool {
-    rustler::resource!(state::StateResource, env);
+    rustler::resource!(state::Ref, env);
     true
 }
 
@@ -17,6 +19,7 @@ rustler::init!(
         state::media_engine_exists,
         state::new_api,
         state::new_media_engine,
+        state::new_peer_connection,
         state::new_registry,
         state::registry_exists,
     ],

@@ -10,4 +10,7 @@ rustler::atoms! {
 
     not_found,
     webrtc_error,
+
+    // messages
+    peer_connection_ready,
 }

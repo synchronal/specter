@@ -1460,6 +1460,7 @@ name = "specter_nif"
 version = "0.1.0"
 dependencies = [
  "rustler",
+ "tokio",
  "uuid",
  "webrtc",
 ]

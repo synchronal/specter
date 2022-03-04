@@ -20,12 +20,20 @@ defmodule Specter do
       iex> Specter.registry_exists?(specter, registry)
       true
       ...>
-      iex> {:ok, _api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
       ...>
       iex> Specter.media_engine_exists?(specter, media_engine)
       false
       iex> Specter.registry_exists?(specter, registry)
       false
+      ...>
+      iex> :ok = Specter.new_peer_connection(specter, api)
+      iex> {:error, :timeout} =
+      ...>   receive do
+      ...>     {:peer_connection_ready, pc} -> {:ok, pc}
+      ...>   after
+      ...>     500 -> {:error, :timeout}
+      ...>   end
 
   ## Thoughts
 
@@ -51,20 +59,24 @@ defmodule Specter do
   @opaque t() :: Specter.Native.t()
 
   @typedoc """
+  `t:Specter.api_t/0` represent an instantiated API managed in the NIF.
+  """
+  @opaque api_t() :: String.t()
+
+  @typedoc """
   `t:Specter.media_engine_t/0` represents an instantiated MediaEngine managed in the NIF.
   """
   @opaque media_engine_t() :: String.t()
 
   @typedoc """
+  `t:Specter.peer_connection_t/0` represents an instantiated RTCPeerConnection managed in the NIF.
+  """
+  @opaque peer_connection_t() :: String.t()
+
+  @typedoc """
   `t:Specter.registry_t/0` represent an instantiated intercepter Registry managed in the NIF.
   """
   @opaque registry_t() :: String.t()
-
-  @typedoc """
-  `t:Specter.api_t/0` represent an instantiated APIBuilder managed in the NIF.
-  """
-  @opaque api_t() :: String.t()
-
   @typedoc """
   A uri in the form `protocol:host:port`, where protocol is either
   `stun` or `turn`.
@@ -176,6 +188,15 @@ defmodule Specter do
   """
   @spec new_media_engine(t()) :: {:ok, media_engine_t()} | {:error, term()}
   def new_media_engine(ref), do: Native.new_media_engine(ref)
+
+  @doc """
+  Creates a new RTCPeerConnection, using an API reference created with `new_api/3`. The
+  functionality wrapped by this function is async, so `:ok` is returned immediately.
+  Callers should listen for the `{:peer_connection_ready, peer_connection_t()}` message
+  to receive the results of this function.
+  """
+  @spec new_peer_connection(t(), api_t()) :: :ok | {:error, term()}
+  def new_peer_connection(ref, api), do: Native.new_peer_connection(ref, api)
 
   @doc """
   Creates an intercepter registry. This is a user configurable RTP/RTCP pipeline,

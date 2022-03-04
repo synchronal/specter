@@ -11,5 +11,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rustler = "0.24"
+tokio = { version = "1", features = ["full"] }
 uuid = "0.8"
 webrtc = "0.4"

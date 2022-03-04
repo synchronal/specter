@@ -38,6 +38,14 @@ defmodule Specter.Native do
   def new_media_engine(_ref), do: error()
 
   @doc """
+  An RTCPeerConnection.
+
+  - https://github.com/webrtc-rs/webrtc/blob/master/src/peer_connection/mod.rs
+  """
+  @spec new_peer_connection(t(), Specter.api_t()) :: :ok | {:error, term()}
+  def new_peer_connection(_ref, _api), do: error()
+
+  @doc """
   Creates an intercepter registry. This is a user configurable RTP/RTCP pipeline,
   and provides features such as NACKs and RTCP Reports.
 
