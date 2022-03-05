@@ -1,5 +1,3 @@
-#![feature(mutex_unlock)]
-
 use rustler::{Env, Term};
 
 mod atoms;

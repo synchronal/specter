@@ -240,7 +240,7 @@ async fn do_new_peer_connection<'a>(
     resource: ResourceArc<Ref>,
     api_uuid: Term<'a>,
 ) -> Result<(), Atom> {
-    let state = resource.0.lock().expect("Failed to obtain a lock");
+    let mut state = resource.0.lock().expect("Failed to obtain a lock");
     let mut msg_env = rustler::env::OwnedEnv::new();
 
     let api = match state.get_api(api_uuid) {
@@ -262,9 +262,6 @@ async fn do_new_peer_connection<'a>(
     let rtc_config = RTCConfiguration::from(&state.config.clone());
     let pc = api.new_peer_connection(rtc_config).await.unwrap();
 
-    Mutex::unlock(state);
-
-    let mut state = resource.0.lock().expect("Failed to obtain lock");
     state.add_peer_connection(&pc_id, pc);
 
     // let pid = state.pid();
