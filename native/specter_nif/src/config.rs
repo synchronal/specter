@@ -9,6 +9,14 @@ pub struct Config {
     pub ice_servers: Vec<String>,
 }
 
+impl Config {
+    pub fn new(ice_servers: Vec<String>) -> Self {
+        Config {
+            ice_servers,
+        }
+    }
+}
+
 impl From<&Config> for RTCConfiguration {
     fn from(config: &Config) -> Self {
         RTCConfiguration {

@@ -22,6 +22,17 @@ pub struct State {
 }
 
 impl State {
+    fn new(config: Config, pid: Pid) -> Self {
+        State {
+            config,
+            pid,
+            apis: HashMap::new(),
+            media_engines: HashMap::new(),
+            peer_connections: HashMap::new(),
+            registries: HashMap::new(),
+        }
+    }
+
     // API
 
     pub(crate) fn add_api(&mut self, uuid: &String, api: API) -> &mut State {
@@ -100,14 +111,7 @@ fn init<'a>(env: Env<'a>, opts: Term<'a>) -> Term<'a> {
         Ok(config) => config,
     };
 
-    let state = State {
-        apis: HashMap::new(),
-        config: config,
-        media_engines: HashMap::new(),
-        peer_connections: HashMap::new(),
-        pid: env.pid(),
-        registries: HashMap::new(),
-    };
+    let state = State::new(config, env.pid());
     let resource = ResourceArc::new(Ref(Mutex::new(state)));
 
     (atoms::ok(), resource).encode(env)
@@ -335,7 +339,7 @@ fn parse_init_opts<'a>(env: Env<'a>, opts: Term<'a>) -> Result<Config, Atom> {
         Ok(servers) => servers.decode().unwrap(),
     };
 
-    let config = Config { ice_servers };
+    let config = Config::new(ice_servers);
 
     Ok(config)
 }
