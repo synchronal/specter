@@ -33,7 +33,7 @@ impl State {
         }
     }
 
-    // API
+    //***** API
 
     pub(crate) fn add_api(&mut self, uuid: &String, api: API) -> &mut State {
         self.apis.insert(uuid.clone(), api);
@@ -45,7 +45,7 @@ impl State {
         self.apis.get(aid)
     }
 
-    // MediaEngine
+    //***** MediaEngine
 
     pub(crate) fn add_media_engine(&mut self, uuid: &String, engine: MediaEngine) -> &mut State {
         self.media_engines.insert(uuid.clone(), engine);
@@ -69,7 +69,7 @@ impl State {
         self.media_engines.remove(mid)
     }
 
-    // RTCPeerConnection
+    //***** RTCPeerConnection
 
     pub(crate) fn add_peer_connection(
         &mut self,
@@ -80,7 +80,7 @@ impl State {
         self
     }
 
-    // Registry
+    //***** Registry
 
     pub(crate) fn add_registry(&mut self, uuid: &String, registry: Registry) -> &mut State {
         self.registries.insert(uuid.clone(), registry);
@@ -102,8 +102,8 @@ impl State {
 // Elixir as a reference.
 pub struct Ref(Mutex<State>);
 
-// Initialize the NIF, returning a reference to Elixir that can be
-// passed back into the NIF to retrieve or alter state.
+/// Initialize the NIF, returning a reference to Elixir that can be
+/// passed back into the NIF to retrieve or alter state.
 #[rustler::nif(name = "__init__")]
 fn init<'a>(env: Env<'a>, opts: Term<'a>) -> Term<'a> {
     let config = match parse_init_opts(env, opts) {
@@ -128,13 +128,13 @@ fn get_config<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, 
     Ok(config.encode(env))
 }
 
-// Create a MediaEngine object to configure the default supported codecs.
-//
-// Open questions:
-// - What actually is a MediaEngine?
-// - Why is it here?
-// - Do we ever interact with it later, or is it just used to configure
-//   behaviors of RTCPeerConnections?
+/// Create a MediaEngine object to configure the default supported codecs.
+///
+/// Open questions:
+/// - What actually is a MediaEngine?
+/// - Why is it here?
+/// - Do we ever interact with it later, or is it just used to configure
+///   behaviors of RTCPeerConnections?
 #[rustler::nif]
 fn new_media_engine<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, Atom> {
     let mut state = match resource.0.try_lock() {
@@ -153,11 +153,11 @@ fn new_media_engine<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term
     Ok(engine_id.encode(env))
 }
 
-// Create an intercepter registry.
-//
-// Open questions:
-// - What the heck is an intercepter registry?
-// - How is it used later?
+/// Create an intercepter registry.
+///
+/// Open questions:
+/// - What the heck is an intercepter registry?
+/// - How is it used later?
 #[rustler::nif]
 fn new_registry<'a>(
     env: Env<'a>,
@@ -185,12 +185,12 @@ fn new_registry<'a>(
     Ok(registry_id.encode(env))
 }
 
-// Create a new API. This is directly used when creating RTCPeerConnections.
-//
-// Open questions:
-// - This is used to create RTCPeerConnections. Is it used for anything else?
-// - I thought we needed to create a new registry for each PC. Does that
-//   mean we need to create a new one of these for each PC?
+/// Create a new API. This is directly used when creating RTCPeerConnections.
+///
+/// Open questions:
+/// - This is used to create RTCPeerConnections. Is it used for anything else?
+/// - I thought we needed to create a new registry for each PC. Does that
+///   mean we need to create a new one of these for each PC?
 #[rustler::nif]
 fn new_api<'a>(
     env: Env<'a>,
@@ -223,11 +223,11 @@ fn new_api<'a>(
     Ok(api_id.encode(env))
 }
 
-// Create a new RTCPeerConnection.
-//
-// Open questions:
-// - Once this is initialized, how does it run in a thread that doesn't conflict
-//   with the Erlang scheduler?
+/// Create a new RTCPeerConnection.
+///
+/// Open questions:
+/// - Once this is initialized, how does it run in a thread that doesn't conflict
+///   with the Erlang scheduler?
 #[rustler::nif]
 fn new_peer_connection<'a>(
     env: Env<'a>,
@@ -277,12 +277,12 @@ async fn do_new_peer_connection<'a>(
     Ok(())
 }
 
-// Returns true or false depending on whether the State hashmap owns a MediaEngine
-// for the given UUID.
-//
-// Some entities need to take ownership of a given MediaEngine, for example when
-// creating an API. After that happens, the MediaEngine will no longer be available
-// in the State hashmap.
+/// Returns true or false depending on whether the State hashmap owns a MediaEngine
+/// for the given UUID.
+///
+/// Some entities need to take ownership of a given MediaEngine, for example when
+/// creating an API. After that happens, the MediaEngine will no longer be available
+/// in the State hashmap.
 #[rustler::nif]
 fn media_engine_exists<'a>(
     env: Env<'a>,
@@ -300,10 +300,10 @@ fn media_engine_exists<'a>(
     }
 }
 
-// Returns true or false depending on whether the State hashmap owns a Registry
-// for the given UUID.
-//
-// See `media_engine_exists` for Notes.
+/// Returns true or false depending on whether the State hashmap owns a Registry
+/// for the given UUID.
+///
+/// See `media_engine_exists` for Notes.
 #[rustler::nif]
 fn registry_exists<'a>(
     env: Env<'a>,
