@@ -11,9 +11,7 @@ pub struct Config {
 
 impl Config {
     pub fn new(ice_servers: Vec<String>) -> Self {
-        Config {
-            ice_servers,
-        }
+        Config { ice_servers }
     }
 }
 
