@@ -27,7 +27,7 @@ end
 - [x] `Specter.new_api/3` (ref, uuid, uuid), returning UUID
   - arg1: media engine uuid
   - arg2: registry uuid
-- [ ] `Specter.new_rtc_peer_connection/2` (ref, uuid), returning UUID
+- [x] `Specter.new_rtc_peer_connection/2` (ref, uuid), returning UUID
   - arg1: api builder uuid
 - [ ] `Specter.set_remote_description/3` (ref, uuid, offer)
 - [ ] `Specter.create_answer/3` (ref, uuid, opts)
@@ -68,3 +68,11 @@ The following script is encouraged to run all checks as a part of pushing commit
 ```shell
 bin/dev/shipit
 ```
+
+
+## References / Thank yous
+
+This project is indebted to the following sites and references (at the very least).
+
+- https://github.com/scrogson/franz
+
