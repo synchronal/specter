@@ -1,9 +1,10 @@
 use crate::atoms;
 use crate::config::Config;
+use crate::task;
 use rustler::types::pid::Pid;
 use rustler::{Atom, Encoder, Env, ResourceArc, Term};
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 use webrtc::api::interceptor_registry as interceptor;
 use webrtc::api::media_engine::MediaEngine;
@@ -13,7 +14,7 @@ use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::RTCPeerConnection;
 
 pub struct State {
-    apis: HashMap<String, API>,
+    apis: HashMap<String, Arc<API>>,
     config: Config,
     media_engines: HashMap<String, MediaEngine>,
     peer_connections: HashMap<String, RTCPeerConnection>,
@@ -36,11 +37,11 @@ impl State {
     //***** API
 
     pub(crate) fn add_api(&mut self, uuid: &String, api: API) -> &mut State {
-        self.apis.insert(uuid.clone(), api);
+        self.apis.insert(uuid.clone(), Arc::new(api));
         self
     }
 
-    pub(crate) fn get_api<'a>(&self, uuid: Term<'a>) -> Option<&API> {
+    pub(crate) fn get_api<'a>(&self, uuid: Term<'a>) -> Option<&Arc<API>> {
         let aid: &String = &uuid.clone().decode().unwrap();
         self.apis.get(aid)
     }
@@ -100,7 +101,12 @@ impl State {
 
 // The resource which will be wrapped in an ResourceArc and returned to
 // Elixir as a reference.
-pub struct Ref(Mutex<State>);
+pub struct Ref(Arc<Mutex<State>>);
+
+pub fn load(env: Env) -> bool {
+    rustler::resource!(Ref, env);
+    true
+}
 
 /// Initialize the NIF, returning a reference to Elixir that can be
 /// passed back into the NIF to retrieve or alter state.
@@ -112,7 +118,7 @@ fn init<'a>(env: Env<'a>, opts: Term<'a>) -> Term<'a> {
     };
 
     let state = State::new(config, env.pid());
-    let resource = ResourceArc::new(Ref(Mutex::new(state)));
+    let resource = ResourceArc::new(Ref(Arc::new(Mutex::new(state))));
 
     (atoms::ok(), resource).encode(env)
 }
@@ -234,47 +240,46 @@ fn new_peer_connection<'a>(
     resource: ResourceArc<Ref>,
     api_uuid: Term<'a>,
 ) -> Term<'a> {
-    let _future = do_new_peer_connection(resource, api_uuid);
-    // block_on(future);
-
-    atoms::ok().encode(env)
-}
-
-async fn do_new_peer_connection<'a>(
-    resource: ResourceArc<Ref>,
-    api_uuid: Term<'a>,
-) -> Result<(), Atom> {
-    let mut state = resource.0.lock().expect("Failed to obtain a lock");
     let mut msg_env = rustler::env::OwnedEnv::new();
 
-    let api = match state.get_api(api_uuid) {
-        None => {
-            msg_env.send_and_clear(&state.pid, |env| {
-                (
-                    atoms::peer_connection_ready(),
-                    atoms::error(),
-                    atoms::not_found(),
-                )
-                    .encode(env)
-            });
-            return Err(atoms::not_found());
+    let api = {
+        let state_ref = resource.0.lock().unwrap();
+        match state_ref.get_api(api_uuid) {
+            None => return (atoms::error(), atoms::not_found()).encode(env),
+            Some(a) => Arc::clone(a),
         }
-        Some(a) => a,
     };
 
-    let pc_id = gen_uuid();
-    let rtc_config = RTCConfiguration::from(&state.config.clone());
-    let pc = api.new_peer_connection(rtc_config).await.unwrap();
+    let uuid = gen_uuid();
+    let pc_id = uuid.clone();
 
-    state.add_peer_connection(&pc_id, pc);
+    task::spawn(async move {
+        let rtc_config = {
+            let state = resource.0.lock().unwrap();
+            RTCConfiguration::from(&state.config.clone())
+        };
 
-    // let pid = state.pid();
-    msg_env.send_and_clear(&state.pid, |env| {
-        (atoms::peer_connection_ready(), pc_id).encode(env)
+        let pc = match api.new_peer_connection(rtc_config).await {
+            Err(_) => {
+                let state = resource.0.lock().unwrap();
+                msg_env.send_and_clear(&state.pid, |env| {
+                    (atoms::peer_connection_error(), pc_id).encode(env)
+                });
+                return ();
+            }
+            Ok(pc) => pc,
+        };
+
+        {}
+
+        let mut state = resource.0.lock().unwrap();
+        state.add_peer_connection(&pc_id, pc);
+        msg_env.send_and_clear(&state.pid, |env| {
+            (atoms::peer_connection_ready(), pc_id).encode(env)
+        });
     });
 
-    // here to make the type checker happy
-    Ok(())
+    (atoms::ok(), uuid).encode(env)
 }
 
 /// Returns true or false depending on whether the State hashmap owns a MediaEngine

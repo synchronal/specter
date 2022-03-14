@@ -27,13 +27,13 @@ defmodule Specter do
       iex> Specter.registry_exists?(specter, registry)
       false
       ...>
-      iex> :ok = Specter.new_peer_connection(specter, api)
-      iex> {:error, :timeout} =
-      ...>   receive do
-      ...>     {:peer_connection_ready, pc} -> {:ok, pc}
-      ...>   after
-      ...>     500 -> {:error, :timeout}
-      ...>   end
+      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> {:ok, _pc} =
+      ...>     receive do
+      ...>       {:peer_connection_ready, ^pc} -> {:ok, pc}
+      ...>     after
+      ...>       500 -> {:error, :timeout}
+      ...>     end
 
   ## Thoughts
 
@@ -194,8 +194,27 @@ defmodule Specter do
   functionality wrapped by this function is async, so `:ok` is returned immediately.
   Callers should listen for the `{:peer_connection_ready, peer_connection_t()}` message
   to receive the results of this function.
+
+  | param     | type     | default |
+  | --------- | -------- | ------- |
+  | `specter` | `t()`    | |
+  | `api`     | `opaque` | |
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> {:ok, _pc} =
+      ...>     receive do
+      ...>       {:peer_connection_ready, ^pc} -> {:ok, pc}
+      ...>     after
+      ...>       100 -> {:error, :timeout}
+      ...>      end
   """
-  @spec new_peer_connection(t(), api_t()) :: :ok | {:error, term()}
+  @spec new_peer_connection(t(), api_t()) :: {:ok, peer_connection_t()} | {:error, term()}
   def new_peer_connection(ref, api), do: Native.new_peer_connection(ref, api)
 
   @doc """

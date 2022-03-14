@@ -90,6 +90,22 @@ defmodule SpecterTest do
     end
   end
 
+  describe "new_peer_connection" do
+    setup [:initialize_specter, :init_api]
+
+    test "returns a UUID, then sends a :peer_connection_ready", %{specter: specter, api: api} do
+      assert {:ok, pc} = Specter.new_peer_connection(specter, api)
+      assert_receive {:peer_connection_ready, ^pc}
+
+      assert is_binary(pc)
+      assert String.match?(pc, @uuid_regex)
+    end
+
+    test "returns {:error, :not_found} when given a random api id", %{specter: specter} do
+      assert {:error, :not_found} = Specter.new_peer_connection(specter, UUID.uuid4())
+    end
+  end
+
   describe "media_engine_exists?" do
     setup :initialize_specter
 

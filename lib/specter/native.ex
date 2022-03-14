@@ -42,7 +42,8 @@ defmodule Specter.Native do
 
   - https://github.com/webrtc-rs/webrtc/blob/master/src/peer_connection/mod.rs
   """
-  @spec new_peer_connection(t(), Specter.api_t()) :: :ok | {:error, term()}
+  @spec new_peer_connection(t(), Specter.api_t()) ::
+          {:ok, Specter.peer_connection_t()} | {:error, term()}
   def new_peer_connection(_ref, _api), do: error()
 
   @doc """

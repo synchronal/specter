@@ -3,9 +3,10 @@ use rustler::{Env, Term};
 mod atoms;
 mod config;
 mod state;
+mod task;
 
 fn on_load(env: Env, _info: Term) -> bool {
-    rustler::resource!(state::Ref, env);
+    state::load(env);
     true
 }
 
