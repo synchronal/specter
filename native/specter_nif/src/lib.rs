@@ -20,6 +20,7 @@ rustler::init!(
         state::new_media_engine,
         state::new_peer_connection,
         state::new_registry,
+        state::peer_connection_exists,
         state::registry_exists,
     ],
     load = on_load

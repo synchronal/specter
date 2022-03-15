@@ -68,6 +68,14 @@ defmodule Specter.Native do
   def new_api(_ref, _media_engine, _registry), do: error()
 
   @doc """
+  Checks whether the UUID representing an RTCPeerConnection points to an initialized
+  instance.
+  """
+  @spec peer_connection_exists(t(), Specter.peer_connection_t()) ::
+          {:ok, boolean()} | {:error, term()}
+  def peer_connection_exists(_ref, _pc), do: error()
+
+  @doc """
   Checks whether the UUID representing a Registry points to an initialized
   Registry that has not been moved into a context owned by some other resource.
   """

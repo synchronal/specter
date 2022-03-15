@@ -34,6 +34,8 @@ defmodule Specter do
       ...>     after
       ...>       500 -> {:error, :timeout}
       ...>     end
+      iex> Specter.peer_connection_exists?(specter, pc)
+      true
 
   ## Thoughts
 
@@ -238,6 +240,40 @@ defmodule Specter do
   """
   @spec new_registry(t(), media_engine_t()) :: {:ok, registry_t()} | {:error, term()}
   def new_registry(ref, media_engine), do: Native.new_registry(ref, media_engine)
+
+  @doc """
+  Returns true or false, depending on whether the RTCPeerConnection is initialized.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> {:ok, pc} =
+      ...>     receive do
+      ...>       {:peer_connection_ready, ^pc} -> {:ok, pc}
+      ...>     after
+      ...>       100 -> {:error, :timeout}
+      ...>      end
+      iex> Specter.peer_connection_exists?(specter, pc)
+      true
+
+      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
+      iex> Specter.peer_connection_exists?(specter, UUID.uuid4())
+      false
+  """
+  @spec peer_connection_exists?(t(), peer_connection_t()) :: boolean() | no_return()
+  def peer_connection_exists?(ref, peer_connection) do
+    case Native.peer_connection_exists(ref, peer_connection) do
+      {:ok, value} ->
+        value
+
+      {:error, error} ->
+        raise "Unable to determine whether peer connection exists:\n#{inspect(error)}"
+    end
+  end
 
   @doc """
   Returns true or false, depending on whether the registry is available for

@@ -81,6 +81,11 @@ impl State {
         self
     }
 
+    pub(crate) fn get_peer_connection<'a>(&self, uuid: Term<'a>) -> Option<&RTCPeerConnection> {
+        let aid: &String = &uuid.clone().decode().unwrap();
+        self.peer_connections.get(aid)
+    }
+
     //***** Registry
 
     pub(crate) fn add_registry(&mut self, uuid: &String, registry: Registry) -> &mut State {
@@ -300,6 +305,25 @@ fn media_engine_exists<'a>(
     };
 
     match state.get_media_engine(media_engine_uuid) {
+        None => (atoms::ok(), false).encode(env),
+        Some(_m) => (atoms::ok(), true).encode(env),
+    }
+}
+///
+/// Returns true or false depending on whether the State hashmap owns an RTCPeerConnection
+/// for the given UUID.
+#[rustler::nif]
+fn peer_connection_exists<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.try_lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    match state.get_peer_connection(pc_uuid) {
         None => (atoms::ok(), false).encode(env),
         Some(_m) => (atoms::ok(), true).encode(env),
     }

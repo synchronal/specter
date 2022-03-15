@@ -113,9 +113,25 @@ defmodule SpecterTest do
       refute Specter.media_engine_exists?(specter, UUID.uuid4())
     end
 
-    test "is true when the media engine does not exist", %{specter: specter} do
+    test "is true when the media engine exists", %{specter: specter} do
       assert {:ok, media_engine} = Specter.new_media_engine(specter)
       assert Specter.media_engine_exists?(specter, media_engine)
+    end
+  end
+
+  describe "peer_connection_exists?" do
+    setup [:initialize_specter, :init_api]
+
+    test "is false when the peer connection does not exist", %{specter: specter} do
+      refute Specter.peer_connection_exists?(specter, UUID.uuid4())
+    end
+
+    test "is true when the peer connection exists", %{specter: specter, api: api} do
+      assert {:ok, pc} = Specter.new_peer_connection(specter, api)
+      refute Specter.peer_connection_exists?(specter, pc)
+      assert_receive {:peer_connection_ready, ^pc}
+
+      assert Specter.peer_connection_exists?(specter, pc)
     end
   end
 
@@ -126,7 +142,7 @@ defmodule SpecterTest do
       refute Specter.registry_exists?(specter, UUID.uuid4())
     end
 
-    test "is true when the media engine does not exist", %{specter: specter} do
+    test "is true when the media engine exists", %{specter: specter} do
       assert {:ok, media_engine} = Specter.new_media_engine(specter)
       assert {:ok, registry} = Specter.new_registry(specter, media_engine)
       assert Specter.registry_exists?(specter, registry)
