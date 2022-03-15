@@ -1460,8 +1460,10 @@ dependencies = [
 name = "specter_nif"
 version = "0.1.0"
 dependencies = [
+ "log",
  "once_cell",
  "rustler",
+ "serde_json",
  "tokio",
  "uuid",
  "webrtc",

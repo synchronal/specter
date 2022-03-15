@@ -17,4 +17,19 @@ defmodule SpecterTest.NifHelpers do
 
     [api: api]
   end
+
+  def init_peer_connection(%{specter: specter, api: api}) do
+    {:ok, pc} = Specter.new_peer_connection(specter, api)
+
+    :ok =
+      receive do
+        {:peer_connection_ready, ^pc} -> :ok
+      after
+        1000 ->
+          {:error, :timeout}
+      end
+
+    true = Specter.peer_connection_exists?(specter, pc)
+    [peer_connection: pc]
+  end
 end

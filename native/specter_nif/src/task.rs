@@ -6,6 +6,7 @@ use tokio::task::JoinHandle;
 static TOKIO: Lazy<Runtime> = Lazy::new(|| {
     Builder::new_multi_thread()
         .enable_time()
+        .enable_io()
         .build()
         .expect("Specter.Native: Failed to start tokio runtime")
 });

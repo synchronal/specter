@@ -82,6 +82,14 @@ defmodule Specter.Native do
   @spec registry_exists(t(), Specter.registry_t()) :: {:ok, boolean()} | {:error, term()}
   def registry_exists(_ref, _registry), do: error()
 
+  @doc """
+  Given an SDP offer and a UUID representing an RTCPeerConnection, set the offer on the
+  connection.
+  """
+  @spec set_remote_description(t(), Specter.peer_connection_t(), Specter.sdp_t()) ::
+          :ok | {:error, term()}
+  def set_remote_description(_ref, _peer_connection, _offer), do: error()
+
   ##
   ## PRIVATE
   ##

@@ -29,10 +29,12 @@ end
   - arg2: registry uuid
 - [x] `Specter.new_rtc_peer_connection/2` (ref, uuid), returning UUID
   - arg1: api builder uuid
-- [ ] `Specter.set_remote_description/3` (ref, uuid, offer)
+- [x] `Specter.set_remote_description/4` (ref, uuid, offer/answer, sdp)
 - [ ] `Specter.create_answer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`)
 - [ ] `Specter.set_local_description`
+- [ ] `Specter.subscribe_to_state_changes/2` (ref, uuid)
+  - state changes sent to Elixir pid
 - [ ] `pc.on_ice_candidate` sends candidate to callback process
 - [ ] `pc.gathering_complete_promise` sends message to callback process
 - [ ] `Specter.set_description`

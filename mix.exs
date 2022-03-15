@@ -32,6 +32,7 @@ defmodule Specter.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.28", only: [:dev], runtime: false},
+      {:jason, "~> 1.3"},
       {:mix_audit, "~> 1.0", only: [:dev], runtime: false},
       {:rustler, "~> 0.23"},
       {:uuid, "~> 1.1", only: [:test]}

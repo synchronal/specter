@@ -1,25 +1,33 @@
 use crate::atoms;
 use crate::config::Config;
 use crate::task;
+use log::trace;
 use rustler::types::pid::Pid;
 use rustler::{Atom, Encoder, Env, ResourceArc, Term};
+use serde_json;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use tokio::sync::mpsc::{channel, Sender};
 use uuid::Uuid;
 use webrtc::api::interceptor_registry as interceptor;
 use webrtc::api::media_engine::MediaEngine;
 use webrtc::api::{APIBuilder, API};
 use webrtc::interceptor::registry::Registry;
 use webrtc::peer_connection::configuration::RTCConfiguration;
-use webrtc::peer_connection::RTCPeerConnection;
+// use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
+use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 pub struct State {
     apis: HashMap<String, Arc<API>>,
     config: Config,
     media_engines: HashMap<String, MediaEngine>,
-    peer_connections: HashMap<String, RTCPeerConnection>,
+    peer_connections: HashMap<String, Sender<RTCPCMsg>>,
     pid: Pid,
     registries: HashMap<String, Registry>,
+}
+
+pub enum RTCPCMsg {
+    SetRemoteDescription(String, RTCSessionDescription),
 }
 
 impl State {
@@ -42,8 +50,8 @@ impl State {
     }
 
     pub(crate) fn get_api<'a>(&self, uuid: Term<'a>) -> Option<&Arc<API>> {
-        let aid: &String = &uuid.clone().decode().unwrap();
-        self.apis.get(aid)
+        let id: &String = &uuid.clone().decode().unwrap();
+        self.apis.get(id)
     }
 
     //***** MediaEngine
@@ -56,18 +64,18 @@ impl State {
     pub(crate) fn get_media_engine<'a>(&mut self, uuid: Term<'a>) -> Option<&MediaEngine> {
         // This could stand some error handling. The match implementation
         // fails with "creates a temporary which is freed while still in use."
-        let mid: &String = &uuid.clone().decode().unwrap();
-        self.media_engines.get(mid)
+        let id: &String = &uuid.clone().decode().unwrap();
+        self.media_engines.get(id)
     }
 
     pub(crate) fn get_media_engine_mut<'a>(&mut self, uuid: Term<'a>) -> Option<&mut MediaEngine> {
-        let mid: &String = &uuid.clone().decode().unwrap();
-        self.media_engines.get_mut(mid)
+        let id: &String = &uuid.clone().decode().unwrap();
+        self.media_engines.get_mut(id)
     }
 
     pub(crate) fn remove_media_engine<'a>(&mut self, uuid: Term<'a>) -> Option<MediaEngine> {
-        let mid: &String = &uuid.clone().decode().unwrap();
-        self.media_engines.remove(mid)
+        let id: &String = &uuid.clone().decode().unwrap();
+        self.media_engines.remove(id)
     }
 
     //***** RTCPeerConnection
@@ -75,15 +83,15 @@ impl State {
     pub(crate) fn add_peer_connection(
         &mut self,
         uuid: &String,
-        pc: RTCPeerConnection,
+        pc: Sender<RTCPCMsg>,
     ) -> &mut State {
         self.peer_connections.insert(uuid.clone(), pc);
         self
     }
 
-    pub(crate) fn get_peer_connection<'a>(&self, uuid: Term<'a>) -> Option<&RTCPeerConnection> {
-        let aid: &String = &uuid.clone().decode().unwrap();
-        self.peer_connections.get(aid)
+    pub(crate) fn get_peer_connection<'a>(&self, uuid: Term<'a>) -> Option<&Sender<RTCPCMsg>> {
+        let id: &String = &uuid.clone().decode().unwrap();
+        self.peer_connections.get(id)
     }
 
     //***** Registry
@@ -94,13 +102,13 @@ impl State {
     }
 
     pub(crate) fn get_registry<'a>(&mut self, uuid: Term<'a>) -> Option<&Registry> {
-        let rid: &String = &uuid.clone().decode().unwrap();
-        self.registries.get(rid)
+        let id: &String = &uuid.clone().decode().unwrap();
+        self.registries.get(id)
     }
 
     pub(crate) fn remove_registry<'a>(&mut self, uuid: Term<'a>) -> Option<Registry> {
-        let rid: &String = &uuid.clone().decode().unwrap();
-        self.registries.remove(rid)
+        let id: &String = &uuid.clone().decode().unwrap();
+        self.registries.remove(id)
     }
 }
 
@@ -245,8 +253,6 @@ fn new_peer_connection<'a>(
     resource: ResourceArc<Ref>,
     api_uuid: Term<'a>,
 ) -> Term<'a> {
-    let mut msg_env = rustler::env::OwnedEnv::new();
-
     let api = {
         let state_ref = resource.0.lock().unwrap();
         match state_ref.get_api(api_uuid) {
@@ -256,33 +262,7 @@ fn new_peer_connection<'a>(
     };
 
     let uuid = gen_uuid();
-    let pc_id = uuid.clone();
-
-    task::spawn(async move {
-        let rtc_config = {
-            let state = resource.0.lock().unwrap();
-            RTCConfiguration::from(&state.config.clone())
-        };
-
-        let pc = match api.new_peer_connection(rtc_config).await {
-            Err(_) => {
-                let state = resource.0.lock().unwrap();
-                msg_env.send_and_clear(&state.pid, |env| {
-                    (atoms::peer_connection_error(), pc_id).encode(env)
-                });
-                return ();
-            }
-            Ok(pc) => pc,
-        };
-
-        {}
-
-        let mut state = resource.0.lock().unwrap();
-        state.add_peer_connection(&pc_id, pc);
-        msg_env.send_and_clear(&state.pid, |env| {
-            (atoms::peer_connection_ready(), pc_id).encode(env)
-        });
-    });
+    spawn_rtc_peer_connction(resource, api, uuid.clone());
 
     (atoms::ok(), uuid).encode(env)
 }
@@ -350,6 +330,56 @@ fn registry_exists<'a>(
     }
 }
 
+/// Receives an offer or an answer from a remote entity, and sets it on an
+/// existing RTCPeerConnection.
+#[rustler::nif]
+fn set_remote_description<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+    sdp: String,
+) -> Term<'a> {
+    let state = match resource.0.try_lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    // let sdp_type = match sdp_type {
+    //     t if t == atoms::answer() => RTCSdpType::Answer,
+    //     t if t == atoms::offer() => RTCSdpType::Offer,
+    //     _ => return (atoms::error(), atoms::invalid_atom()).encode(env),
+    // };
+    // let session_description = RTCSessionDescription {
+    //     sdp_type,
+    //     sdp,
+    //     ..Default::default()
+    // };
+
+    let session_description = match serde_json::from_str::<RTCSessionDescription>(&sdp) {
+        Err(_) => return (atoms::error(), atoms::invalid_json()).encode(env),
+        Ok(s) => s,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx
+            .send(RTCPCMsg::SetRemoteDescription(uuid, session_description))
+            .await
+        {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
 //
 // PRIVATE
 //
@@ -371,4 +401,53 @@ fn parse_init_opts<'a>(env: Env<'a>, opts: Term<'a>) -> Result<Config, Atom> {
     let config = Config::new(ice_servers);
 
     Ok(config)
+}
+
+fn spawn_rtc_peer_connction(resource: ResourceArc<Ref>, api: Arc<API>, uuid: String) {
+    task::spawn(async move {
+        let mut msg_env = rustler::env::OwnedEnv::new();
+
+        let pc = {
+            let state = resource.0.lock().unwrap();
+            let rtc_config = RTCConfiguration::from(&state.config.clone());
+            api.new_peer_connection(rtc_config)
+        };
+
+        let pc = match pc.await {
+            Err(_) => {
+                let state = resource.0.lock().unwrap();
+                msg_env.send_and_clear(&state.pid, |env| {
+                    (atoms::peer_connection_error(), uuid).encode(env)
+                });
+                return ();
+            }
+            Ok(pc) => Arc::new(pc),
+        };
+
+        let mut rx = {
+            let (tx, rx) = channel::<RTCPCMsg>(1000);
+            let mut state = resource.0.lock().unwrap();
+            state.add_peer_connection(&uuid, tx);
+            msg_env.send_and_clear(&state.pid, |env| {
+                (atoms::peer_connection_ready(), uuid).encode(env)
+            });
+
+            rx
+        };
+
+        loop {
+            match rx.recv().await {
+                Some(RTCPCMsg::SetRemoteDescription(uuid, session)) => {
+                    let lock = pc.clone();
+                    let resp = match lock.set_remote_description(session).await {
+                        Err(_) => (atoms::error(), uuid, atoms::invalid_remote_description()),
+                        Ok(_) => (atoms::ok(), uuid, atoms::set_remote_description()),
+                    };
+                    let state = resource.0.lock().unwrap();
+                    msg_env.send_and_clear(&state.pid, |env| resp.encode(env));
+                }
+                None => break,
+            }
+        }
+    });
 }
