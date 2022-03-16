@@ -28,23 +28,14 @@ defmodule Specter do
       false
       ...>
       iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
-      iex> {:ok, _pc} =
-      ...>     receive do
-      ...>       {:peer_connection_ready, ^pc} -> {:ok, pc}
-      ...>     after
-      ...>       500 -> {:error, :timeout}
-      ...>     end
+      iex> assert_receive {:peer_connection_ready, ^pc}
       iex> Specter.peer_connection_exists?(specter, pc)
       true
       ...>
       iex> Specter.close_peer_connection(specter, pc)
       :ok
-      iex> :ok =
-      ...>     receive do
-      ...>       {:peer_connection_closed, ^pc} -> :ok
-      ...>     after
-      ...>       500 -> {:error, :timeout}
-      ...>     end
+      iex> assert_receive {:peer_connection_closed, ^pc}
+      ...>
 
   ## Thoughts
 
@@ -152,13 +143,17 @@ defmodule Specter do
       iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
       iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
       iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc}
+      ...>
+      iex> Specter.close_peer_connection(specter, pc)
+      :ok
       iex> {:ok, _pc} =
       ...>     receive do
-      ...>       {:peer_connection_ready, ^pc} -> {:ok, pc}
+      ...>       {:peer_connection_closed, ^pc} -> {:ok, pc}
       ...>     after
-      ...>       100 -> {:error, :timeout}
-      ...>      end
-      iex> :ok = Specter.close_peer_connection(specter, pc)
+      ...>       500 -> {:error, :timeout}
+      ...>     end
+      ...>
       iex> Specter.peer_connection_exists?(specter, pc)
       false
   """
@@ -251,12 +246,13 @@ defmodule Specter do
       iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
       iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
       iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      ...>
       iex> {:ok, _pc} =
       ...>     receive do
       ...>       {:peer_connection_ready, ^pc} -> {:ok, pc}
       ...>     after
-      ...>       100 -> {:error, :timeout}
-      ...>      end
+      ...>       500 -> {:error, :timeout}
+      ...>     end
   """
   @spec new_peer_connection(t(), api_t()) :: {:ok, peer_connection_t()} | {:error, term()}
   def new_peer_connection(ref, api), do: Native.new_peer_connection(ref, api)
@@ -294,12 +290,7 @@ defmodule Specter do
       iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
       iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
       iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
-      iex> {:ok, pc} =
-      ...>     receive do
-      ...>       {:peer_connection_ready, ^pc} -> {:ok, pc}
-      ...>     after
-      ...>       100 -> {:error, :timeout}
-      ...>      end
+      iex> assert_receive {:peer_connection_ready, ^pc}
       iex> Specter.peer_connection_exists?(specter, pc)
       true
 
