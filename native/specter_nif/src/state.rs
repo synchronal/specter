@@ -94,6 +94,14 @@ impl State {
         self.peer_connections.get(id)
     }
 
+    pub(crate) fn remove_peer_connection<'a>(
+        &mut self,
+        uuid: Term<'a>,
+    ) -> Option<Sender<RTCPCMsg>> {
+        let id: &String = &uuid.clone().decode().unwrap();
+        self.peer_connections.remove(id)
+    }
+
     //***** Registry
 
     pub(crate) fn add_registry(&mut self, uuid: &String, registry: Registry) -> &mut State {
@@ -267,6 +275,27 @@ fn new_peer_connection<'a>(
     (atoms::ok(), uuid).encode(env)
 }
 
+/// Close an RTCPeerConnection. This pops out the Sender for the task holding the peer connection,
+/// causing it to go out of scope. That causes a `None` to come out of the Sender's recv block.
+#[rustler::nif]
+fn close_peer_connection<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let mut state = match resource.0.try_lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let _tx = match state.remove_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx,
+    };
+
+    (atoms::ok()).encode(env)
+}
+
 /// Returns true or false depending on whether the State hashmap owns a MediaEngine
 /// for the given UUID.
 ///
@@ -429,12 +458,15 @@ fn spawn_rtc_peer_connction(resource: ResourceArc<Ref>, api: Arc<API>, uuid: Str
             let mut state = resource.0.lock().unwrap();
             state.add_peer_connection(&uuid, tx);
             msg_env.send_and_clear(&state.pid, |env| {
-                (atoms::peer_connection_ready(), uuid).encode(env)
+                (atoms::peer_connection_ready(), &uuid).encode(env)
             });
 
             rx
         };
 
+        // Block on messages being received on the channel for this peer connection.
+        // When all senders go out of scope, the receiver will receive `None` and
+        // break out of the loop.
         loop {
             match rx.recv().await {
                 Some(RTCPCMsg::SetRemoteDescription(uuid, session)) => {
@@ -449,5 +481,10 @@ fn spawn_rtc_peer_connction(resource: ResourceArc<Ref>, api: Arc<API>, uuid: Str
                 None => break,
             }
         }
+
+        let state = resource.0.lock().unwrap();
+        msg_env.send_and_clear(&state.pid, |env| {
+            (atoms::peer_connection_closed(), uuid).encode(env)
+        });
     });
 }

@@ -106,6 +106,22 @@ defmodule SpecterTest do
     end
   end
 
+  describe "close_peer_connection" do
+    setup [:initialize_specter, :init_api]
+
+    test "returns {:error, :not_found} when given a random api id", %{specter: specter} do
+      assert {:error, :not_found} = Specter.close_peer_connection(specter, UUID.uuid4())
+    end
+
+    test "returns :ok, then receives a closed message", %{specter: specter, api: api} do
+      assert {:ok, pc} = Specter.new_peer_connection(specter, api)
+      assert_receive {:peer_connection_ready, ^pc}
+
+      assert :ok = Specter.close_peer_connection(specter, pc)
+      assert_receive {:peer_connection_closed, ^pc}
+    end
+  end
+
   describe "media_engine_exists?" do
     setup :initialize_specter
 

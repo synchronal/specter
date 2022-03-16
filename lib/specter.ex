@@ -36,6 +36,15 @@ defmodule Specter do
       ...>     end
       iex> Specter.peer_connection_exists?(specter, pc)
       true
+      ...>
+      iex> Specter.close_peer_connection(specter, pc)
+      :ok
+      iex> :ok =
+      ...>     receive do
+      ...>       {:peer_connection_closed, ^pc} -> :ok
+      ...>     after
+      ...>       500 -> {:error, :timeout}
+      ...>     end
 
   ## Thoughts
 
@@ -132,6 +141,29 @@ defmodule Specter do
   """
   @spec config(t()) :: {:ok, Specter.Config.t()} | {:error, term()}
   def config(ref), do: Native.config(ref)
+
+  @doc """
+  Closes an open instance of an RTCPeerConnection.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> {:ok, _pc} =
+      ...>     receive do
+      ...>       {:peer_connection_ready, ^pc} -> {:ok, pc}
+      ...>     after
+      ...>       100 -> {:error, :timeout}
+      ...>      end
+      iex> :ok = Specter.close_peer_connection(specter, pc)
+      iex> Specter.peer_connection_exists?(specter, pc)
+      false
+  """
+  @spec close_peer_connection(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def close_peer_connection(ref, pc), do: Native.close_peer_connection(ref, pc)
 
   @doc """
   Returns true or false, depending on whether the media engine is available for

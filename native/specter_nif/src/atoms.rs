@@ -16,6 +16,7 @@ rustler::atoms! {
     webrtc_error,
 
     // send
+    peer_connection_closed,
     peer_connection_error,
     peer_connection_ready,
     set_remote_description,

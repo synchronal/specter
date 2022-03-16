@@ -15,6 +15,12 @@ defmodule Specter.Native do
   end
 
   @doc """
+  Closes an RTCPeerConnection represented by the given UUID.
+  """
+  @spec close_peer_connection(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def close_peer_connection(_ref, _pc), do: error()
+
+  @doc """
   Given an initialized NIF, get the current config back out into Elixir.
 
   - https://github.com/webrtc-rs/webrtc/blob/master/src/peer_connection/configuration.rs
