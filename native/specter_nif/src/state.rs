@@ -163,7 +163,7 @@ fn get_config<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, 
 /// - Do we ever interact with it later, or is it just used to configure
 ///   behaviors of RTCPeerConnections?
 #[rustler::nif]
-fn new_media_engine<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, Atom> {
+fn new_media_engine<'a>(resource: ResourceArc<Ref>) -> Result<String, Atom> {
     let mut state = match resource.0.try_lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
@@ -177,7 +177,7 @@ fn new_media_engine<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term
 
     let engine_id = gen_uuid();
     state.add_media_engine(&engine_id, m);
-    Ok(engine_id.encode(env))
+    Ok(engine_id)
 }
 
 /// Create an intercepter registry.
@@ -187,10 +187,9 @@ fn new_media_engine<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term
 /// - How is it used later?
 #[rustler::nif]
 fn new_registry<'a>(
-    env: Env<'a>,
     resource: ResourceArc<Ref>,
     media_engine_uuid: Term<'a>,
-) -> Result<Term<'a>, Atom> {
+) -> Result<String, Atom> {
     let mut state = match resource.0.try_lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
@@ -209,7 +208,7 @@ fn new_registry<'a>(
 
     let registry_id = gen_uuid();
     state.add_registry(&registry_id, registry);
-    Ok(registry_id.encode(env))
+    Ok(registry_id)
 }
 
 /// Create a new API. This is directly used when creating RTCPeerConnections.
@@ -220,11 +219,10 @@ fn new_registry<'a>(
 ///   mean we need to create a new one of these for each PC?
 #[rustler::nif]
 fn new_api<'a>(
-    env: Env<'a>,
     resource: ResourceArc<Ref>,
     media_engine_uuid: Term<'a>,
     registry_uuid: Term<'a>,
-) -> Result<Term<'a>, Atom> {
+) -> Result<String, Atom> {
     let mut state = match resource.0.try_lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
@@ -247,7 +245,7 @@ fn new_api<'a>(
 
     let api_id = gen_uuid();
     state.add_api(&api_id, api);
-    Ok(api_id.encode(env))
+    Ok(api_id)
 }
 
 /// Create a new RTCPeerConnection.
@@ -256,15 +254,11 @@ fn new_api<'a>(
 /// - Once this is initialized, how does it run in a thread that doesn't conflict
 ///   with the Erlang scheduler?
 #[rustler::nif]
-fn new_peer_connection<'a>(
-    env: Env<'a>,
-    resource: ResourceArc<Ref>,
-    api_uuid: Term<'a>,
-) -> Term<'a> {
+fn new_peer_connection<'a>(resource: ResourceArc<Ref>, api_uuid: Term<'a>) -> Result<String, Atom> {
     let api = {
         let state_ref = resource.0.lock().unwrap();
         match state_ref.get_api(api_uuid) {
-            None => return (atoms::error(), atoms::not_found()).encode(env),
+            None => return Err(atoms::not_found()),
             Some(a) => Arc::clone(a),
         }
     };
@@ -272,7 +266,7 @@ fn new_peer_connection<'a>(
     let uuid = gen_uuid();
     spawn_rtc_peer_connction(resource, api, uuid.clone());
 
-    (atoms::ok(), uuid).encode(env)
+    Ok(uuid)
 }
 
 /// Close an RTCPeerConnection. This pops out the Sender for the task holding the peer connection,
@@ -304,37 +298,32 @@ fn close_peer_connection<'a>(
 /// in the State hashmap.
 #[rustler::nif]
 fn media_engine_exists<'a>(
-    env: Env<'a>,
     resource: ResourceArc<Ref>,
     media_engine_uuid: Term<'a>,
-) -> Term<'a> {
+) -> Result<bool, Atom> {
     let mut state = match resource.0.try_lock() {
-        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
 
     match state.get_media_engine(media_engine_uuid) {
-        None => (atoms::ok(), false).encode(env),
-        Some(_m) => (atoms::ok(), true).encode(env),
+        None => Ok(false),
+        Some(_m) => Ok(true),
     }
 }
 ///
 /// Returns true or false depending on whether the State hashmap owns an RTCPeerConnection
 /// for the given UUID.
 #[rustler::nif]
-fn peer_connection_exists<'a>(
-    env: Env<'a>,
-    resource: ResourceArc<Ref>,
-    pc_uuid: Term<'a>,
-) -> Term<'a> {
+fn peer_connection_exists<'a>(resource: ResourceArc<Ref>, pc_uuid: Term<'a>) -> Result<bool, Atom> {
     let state = match resource.0.try_lock() {
-        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
 
     match state.get_peer_connection(pc_uuid) {
-        None => (atoms::ok(), false).encode(env),
-        Some(_m) => (atoms::ok(), true).encode(env),
+        None => Ok(false),
+        Some(_m) => Ok(true),
     }
 }
 
@@ -343,19 +332,15 @@ fn peer_connection_exists<'a>(
 ///
 /// See `media_engine_exists` for Notes.
 #[rustler::nif]
-fn registry_exists<'a>(
-    env: Env<'a>,
-    resource: ResourceArc<Ref>,
-    registry_uuid: Term<'a>,
-) -> Term<'a> {
+fn registry_exists<'a>(resource: ResourceArc<Ref>, registry_uuid: Term<'a>) -> Result<bool, Atom> {
     let mut state = match resource.0.try_lock() {
-        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
 
     match state.get_registry(registry_uuid) {
-        None => (atoms::ok(), false).encode(env),
-        Some(_r) => (atoms::ok(), true).encode(env),
+        None => Ok(false),
+        Some(_r) => Ok(true),
     }
 }
 
