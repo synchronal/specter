@@ -21,6 +21,12 @@ defmodule Specter.Native do
   def close_peer_connection(_ref, _pc), do: error()
 
   @doc """
+  Create an offer from an RTCPeerConnection.
+  """
+  @spec create_offer(t(), Specter.peer_connection_t(), bool(), bool()) :: :ok | {:error, term()}
+  def create_offer(_ref, _pc, _vad, _ice_restart), do: error()
+
+  @doc """
   Given an initialized NIF, get the current config back out into Elixir.
 
   - https://github.com/webrtc-rs/webrtc/blob/master/src/peer_connection/configuration.rs

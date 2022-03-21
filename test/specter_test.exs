@@ -168,21 +168,20 @@ defmodule SpecterTest do
   describe "set_remote_description" do
     setup [:initialize_specter, :init_api, :init_peer_connection]
 
-    test "returns :ok when given an offer", %{specter: specter, peer_connection: peer_connection} do
-      # Note: ufrag, pwd, and fingerprint are all required at the moment.
-      offer = """
-      v=0
-      o=- 2927307686215094172 2 IN IP4 127.0.0.1
-      s=-
-      t=0 0
-      a=extmap-allow-mixed
-      a=msid-semantic: WMS
-      a=ice-ufrag:ZZZZ
-      a=ice-pwd:AU/SQPupllyS0SDG/eRWDCfA
-      a=fingerprint:sha-256 B7:D5:86:B0:92:C6:A6:03:80:C8:59:47:25:EC:FF:3F:57:F5:97:EF:76:B9:AA:14:B7:8C:C9:B3:4D:CA:1B:0A
-      """
+    @valid_offer """
+    v=0
+    o=- 2927307686215094172 2 IN IP4 127.0.0.1
+    s=-
+    t=0 0
+    a=extmap-allow-mixed
+    a=msid-semantic: WMS
+    a=ice-ufrag:ZZZZ
+    a=ice-pwd:AU/SQPupllyS0SDG/eRWDCfA
+    a=fingerprint:sha-256 B7:D5:86:B0:92:C6:A6:03:80:C8:59:47:25:EC:FF:3F:57:F5:97:EF:76:B9:AA:14:B7:8C:C9:B3:4D:CA:1B:0A
+    """
 
-      assert :ok = Specter.set_remote_description(specter, peer_connection, :offer, offer)
+    test "returns :ok when given an offer", %{specter: specter, peer_connection: peer_connection} do
+      assert :ok = Specter.set_remote_description(specter, peer_connection, :offer, @valid_offer)
       assert_receive {:ok, ^peer_connection, :set_remote_description}
       refute_received {:error, ^peer_connection, :invalid_remote_description}
     end
@@ -194,6 +193,28 @@ defmodule SpecterTest do
       offer = "Hello world"
       assert :ok = Specter.set_remote_description(specter, peer_connection, :offer, offer)
       assert_receive {:error, ^peer_connection, :invalid_remote_description}
+    end
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} =
+               Specter.set_remote_description(specter, UUID.uuid4(), :offer, @valid_offer)
+    end
+  end
+
+  describe "create_offer" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.create_offer(specter, UUID.uuid4())
+    end
+
+    test "returns :ok and then sends an offer", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.create_offer(specter, peer_connection)
+      assert_receive {:offer, ^peer_connection, offer}
+      assert is_binary(offer)
     end
   end
 end

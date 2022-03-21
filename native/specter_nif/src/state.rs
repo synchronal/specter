@@ -15,6 +15,8 @@ use webrtc::api::{APIBuilder, API};
 use webrtc::interceptor::registry::Registry;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 // use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
+// use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
+use webrtc::peer_connection::offer_answer_options::RTCOfferOptions;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 pub struct State {
@@ -27,6 +29,7 @@ pub struct State {
 }
 
 pub enum RTCPCMsg {
+    CreateOffer(String, Option<RTCOfferOptions>),
     SetRemoteDescription(String, RTCSessionDescription),
 }
 
@@ -264,7 +267,7 @@ fn new_peer_connection<'a>(resource: ResourceArc<Ref>, api_uuid: Term<'a>) -> Re
     };
 
     let uuid = gen_uuid();
-    spawn_rtc_peer_connction(resource, api, uuid.clone());
+    spawn_rtc_peer_connection(resource, api, uuid.clone());
 
     Ok(uuid)
 }
@@ -344,6 +347,41 @@ fn registry_exists<'a>(resource: ResourceArc<Ref>, registry_uuid: Term<'a>) -> R
     }
 }
 
+#[rustler::nif]
+fn create_offer<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+    voice_activity_detection: bool,
+    ice_restart: bool,
+) -> Term<'a> {
+    let state = match resource.0.try_lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let offer_opts = RTCOfferOptions {
+        ice_restart,
+        voice_activity_detection,
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx.send(RTCPCMsg::CreateOffer(uuid, Some(offer_opts))).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
 /// Receives an offer or an answer from a remote entity, and sets it on an
 /// existing RTCPeerConnection.
 #[rustler::nif]
@@ -417,7 +455,7 @@ fn parse_init_opts<'a>(env: Env<'a>, opts: Term<'a>) -> Result<Config, Atom> {
     Ok(config)
 }
 
-fn spawn_rtc_peer_connction(resource: ResourceArc<Ref>, api: Arc<API>, uuid: String) {
+fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: String) {
     task::spawn(async move {
         let mut msg_env = rustler::env::OwnedEnv::new();
 
@@ -454,6 +492,23 @@ fn spawn_rtc_peer_connction(resource: ResourceArc<Ref>, api: Arc<API>, uuid: Str
         // break out of the loop.
         loop {
             match rx.recv().await {
+                Some(RTCPCMsg::CreateOffer(uuid, opts)) => {
+                    let lock = pc.clone();
+                    let resp = match lock.create_offer(opts).await {
+                        Err(_) => Err(uuid),
+                        Ok(offer) => Ok((uuid, offer)),
+                    };
+                    let state = resource.0.lock().unwrap();
+                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                        Err(uuid) => {
+                            (atoms::error(), uuid, atoms::error_creating_offer()).encode(env)
+                        }
+                        Ok((uuid, offer)) => {
+                            (atoms::offer(), uuid, serde_json::to_string(&offer).unwrap())
+                                .encode(env)
+                        }
+                    });
+                }
                 Some(RTCPCMsg::SetRemoteDescription(uuid, session)) => {
                     let lock = pc.clone();
                     let resp = match lock.set_remote_description(session).await {

@@ -14,6 +14,7 @@ rustler::init!(
     "Elixir.Specter.Native",
     [
         state::close_peer_connection,
+        state::create_offer,
         state::get_config,
         state::init,
         state::media_engine_exists,

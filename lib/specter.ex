@@ -94,6 +94,11 @@ defmodule Specter do
   @type init_options() :: [] | [ice_servers: [ice_server()]]
 
   @typedoc """
+  Options for creating a webrtc offer. Values default to false.
+  """
+  @type offer_options_t() :: [] | [voice_activity_detection: bool, ice_restart: bool]
+
+  @typedoc """
   The type of an SDP message, either an `:offer` or an `:answer`.
   """
   @type sdp_type_t() :: :offer | :answer
@@ -159,6 +164,19 @@ defmodule Specter do
   """
   @spec close_peer_connection(t(), peer_connection_t()) :: :ok | {:error, term()}
   def close_peer_connection(ref, pc), do: Native.close_peer_connection(ref, pc)
+
+  @doc """
+  Given an RTCPeerConnection, create an offer that can be passed to another connection.
+  """
+  @spec create_offer(t(), peer_connection_t(), offer_options_t()) :: :ok | {:error, term()}
+  def create_offer(ref, pc, opts \\ []),
+    do:
+      Native.create_offer(
+        ref,
+        pc,
+        Keyword.get(opts, :voice_activity_detection, false),
+        Keyword.get(opts, :ice_restart, false)
+      )
 
   @doc """
   Returns true or false, depending on whether the media engine is available for

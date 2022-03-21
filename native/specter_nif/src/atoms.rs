@@ -3,6 +3,7 @@ rustler::atoms! {
     error,
 
     // errors
+    error_creating_offer,
     invalid_atom,
     invalid_json,
     invalid_remote_description,
