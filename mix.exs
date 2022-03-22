@@ -10,6 +10,11 @@ defmodule Specter.MixProject do
       deps: deps(),
       description: description(),
       dialyzer: dialyzer(),
+      docs: [
+        extras: doc_extras(),
+        source_ref: "v#{@version}",
+        main: "Specter"
+      ],
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       homepage_url: @scm_url,
@@ -49,6 +54,12 @@ defmodule Specter.MixProject do
       plt_add_apps: [:ex_unit, :mix],
       plt_add_deps: :app_tree,
       plt_file: {:no_warn, "priv/plts/#{otp_version()}/dialyzer.plt"}
+    ]
+  end
+
+  defp doc_extras() do
+    [
+      "README.md"
     ]
   end
 
