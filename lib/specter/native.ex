@@ -2,7 +2,7 @@ defmodule Specter.Native do
   @moduledoc false
   use Rustler, otp_app: :specter, crate: :specter_nif
 
-  @type t() :: reference()
+  @opaque t() :: reference()
 
   @doc """
   Initialize the NIF with RTC configuration, registering the current

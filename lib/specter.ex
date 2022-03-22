@@ -53,12 +53,15 @@ defmodule Specter do
 
   alias Specter.Native
 
+  @enforce_keys [:native]
+  defstruct [:native]
+
   @typedoc """
   `t:Specter.t/0` references are returned from `init/1`, and represent the
   state held in the NIF. All functions interacting with NIF state take a
   `t:Specter.t/0` as their first argument.
   """
-  @opaque t() :: Specter.Native.t()
+  @type t() :: %Specter{native: Specter.Native.t()}
 
   @typedoc """
   `t:Specter.api_t/0` represent an instantiated API managed in the NIF.
@@ -123,7 +126,11 @@ defmodule Specter do
   """
   @spec init() :: {:ok, t()}
   @spec init(init_options()) :: {:ok, t()} | {:error, term()}
-  def init(args \\ []), do: Native.init(args)
+  def init(args \\ []) do
+    with {:ok, native} <- Native.init(args) do
+      {:ok, %Specter{native: native}}
+    end
+  end
 
   @doc """
   Returns the current configuration for the initialized NIF.
@@ -136,7 +143,7 @@ defmodule Specter do
 
   """
   @spec config(t()) :: {:ok, Specter.Config.t()} | {:error, term()}
-  def config(ref), do: Native.config(ref)
+  def config(%Specter{native: ref}), do: Native.config(ref)
 
   @doc """
   Closes an open instance of an RTCPeerConnection.
@@ -163,13 +170,13 @@ defmodule Specter do
       false
   """
   @spec close_peer_connection(t(), peer_connection_t()) :: :ok | {:error, term()}
-  def close_peer_connection(ref, pc), do: Native.close_peer_connection(ref, pc)
+  def close_peer_connection(%Specter{native: ref}, pc), do: Native.close_peer_connection(ref, pc)
 
   @doc """
   Given an RTCPeerConnection, create an offer that can be passed to another connection.
   """
   @spec create_offer(t(), peer_connection_t(), offer_options_t()) :: :ok | {:error, term()}
-  def create_offer(ref, pc, opts \\ []),
+  def create_offer(%Specter{native: ref}, pc, opts \\ []),
     do:
       Native.create_offer(
         ref,
@@ -196,7 +203,7 @@ defmodule Specter do
 
   """
   @spec media_engine_exists?(t(), media_engine_t()) :: boolean() | no_return()
-  def media_engine_exists?(ref, media_engine) do
+  def media_engine_exists?(%Specter{native: ref}, media_engine) do
     case Native.media_engine_exists(ref, media_engine) do
       {:ok, value} ->
         value
@@ -228,7 +235,7 @@ defmodule Specter do
 
   """
   @spec new_api(t(), media_engine_t(), registry_t()) :: {:ok, api_t()} | {:error, term()}
-  def new_api(ref, media_engine, registry),
+  def new_api(%Specter{native: ref}, media_engine, registry),
     do: Native.new_api(ref, media_engine, registry)
 
   @doc """
@@ -244,7 +251,7 @@ defmodule Specter do
 
   """
   @spec new_media_engine(t()) :: {:ok, media_engine_t()} | {:error, term()}
-  def new_media_engine(ref), do: Native.new_media_engine(ref)
+  def new_media_engine(%Specter{native: ref}), do: Native.new_media_engine(ref)
 
   @doc """
   Creates a new RTCPeerConnection, using an API reference created with `new_api/3`. The
@@ -273,7 +280,7 @@ defmodule Specter do
       ...>     end
   """
   @spec new_peer_connection(t(), api_t()) :: {:ok, peer_connection_t()} | {:error, term()}
-  def new_peer_connection(ref, api), do: Native.new_peer_connection(ref, api)
+  def new_peer_connection(%Specter{native: ref}, api), do: Native.new_peer_connection(ref, api)
 
   @doc """
   Creates an intercepter registry. This is a user configurable RTP/RTCP pipeline,
@@ -296,7 +303,8 @@ defmodule Specter do
 
   """
   @spec new_registry(t(), media_engine_t()) :: {:ok, registry_t()} | {:error, term()}
-  def new_registry(ref, media_engine), do: Native.new_registry(ref, media_engine)
+  def new_registry(%Specter{native: ref}, media_engine),
+    do: Native.new_registry(ref, media_engine)
 
   @doc """
   Returns true or false, depending on whether the RTCPeerConnection is initialized.
@@ -317,7 +325,7 @@ defmodule Specter do
       false
   """
   @spec peer_connection_exists?(t(), peer_connection_t()) :: boolean() | no_return()
-  def peer_connection_exists?(ref, peer_connection) do
+  def peer_connection_exists?(%Specter{native: ref}, peer_connection) do
     case Native.peer_connection_exists(ref, peer_connection) do
       {:ok, value} ->
         value
@@ -345,7 +353,7 @@ defmodule Specter do
       false
   """
   @spec registry_exists?(t(), registry_t()) :: boolean() | no_return()
-  def registry_exists?(ref, registry) do
+  def registry_exists?(%Specter{native: ref}, registry) do
     case Native.registry_exists(ref, registry) do
       {:ok, value} ->
         value
@@ -369,7 +377,7 @@ defmodule Specter do
   """
   @spec set_remote_description(t(), peer_connection_t(), sdp_type_t(), sdp_t()) ::
           :ok | {:error, term()}
-  def set_remote_description(ref, pc, sdp_type, sdp) do
+  def set_remote_description(%Specter{native: ref}, pc, sdp_type, sdp) do
     json = Jason.encode!(%{type: sdp_type, sdp: sdp})
     Native.set_remote_description(ref, pc, json)
   end

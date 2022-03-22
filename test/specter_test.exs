@@ -6,12 +6,14 @@ defmodule SpecterTest do
 
   describe "init" do
     test "initializes with default configuration" do
-      assert {:ok, ref} = Specter.init()
+      assert {:ok, %Specter{native: ref}} = Specter.init()
       assert is_reference(ref)
     end
 
     test "initializes with ice_server configuration" do
-      assert {:ok, ref} = Specter.init(ice_servers: ["stun:stun.example.com:3478"])
+      assert {:ok, %Specter{native: ref}} =
+               Specter.init(ice_servers: ["stun:stun.example.com:3478"])
+
       assert is_reference(ref)
     end
   end
