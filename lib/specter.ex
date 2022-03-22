@@ -97,6 +97,11 @@ defmodule Specter do
   @type init_options() :: [] | [ice_servers: [ice_server()]]
 
   @typedoc """
+  Options for creating a webrtc answer. Values default to false.
+  """
+  @type answer_options_t() :: [] | [voice_activity_detection: bool]
+
+  @typedoc """
   Options for creating a webrtc offer. Values default to false.
   """
   @type offer_options_t() :: [] | [voice_activity_detection: bool, ice_restart: bool]
@@ -173,7 +178,44 @@ defmodule Specter do
   def close_peer_connection(%Specter{native: ref}, pc), do: Native.close_peer_connection(ref, pc)
 
   @doc """
+  Given an RTCPeerConnection, create an answer that can be passed to another connection.
+
+  | param             | type                 | default |
+  | ----------------- | -------------------- | ------- |
+  | `specter`         | `t()`                | |
+  | `peer_connection` | `opaque`             | |
+  | `options`         | `answer_options_t()` | voice_activity_detection: false |
+
+  """
+  @spec create_answer(t(), peer_connection_t(), answer_options_t()) :: :ok | {:error, term()}
+  def create_answer(%Specter{native: ref}, pc, opts \\ []),
+    do:
+      Native.create_answer(
+        ref,
+        pc,
+        Keyword.get(opts, :voice_activity_detection, false)
+      )
+
+  @doc """
+  Creates a data channel on an RTCPeerConnection.
+
+  Note: this can be useful when attempting to generate a valid offer, but where no media
+  tracks are expected to be sent or received.
+  """
+  @spec create_data_channel(t(), peer_connection_t(), String.t()) :: :ok | {:error, term()}
+  def create_data_channel(%Specter{native: ref}, pc, label),
+    do: Native.create_data_channel(ref, pc, label)
+
+  @doc """
   Given an RTCPeerConnection, create an offer that can be passed to another connection.
+
+  | param             | type                | default |
+  | ----------------- | ------------------- | ------- |
+  | `specter`         | `t()`               | |
+  | `peer_connection` | `opaque`            | |
+  | `options`         | `offer_options_t()` | voice_activity_detection: false |
+  |                   |                     | ice_restart: false |
+
   """
   @spec create_offer(t(), peer_connection_t(), offer_options_t()) :: :ok | {:error, term()}
   def create_offer(%Specter{native: ref}, pc, opts \\ []),

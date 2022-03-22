@@ -15,8 +15,7 @@ use webrtc::api::{APIBuilder, API};
 use webrtc::interceptor::registry::Registry;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 // use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
-// use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
-use webrtc::peer_connection::offer_answer_options::RTCOfferOptions;
+use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 pub struct State {
@@ -29,6 +28,8 @@ pub struct State {
 }
 
 pub enum RTCPCMsg {
+    CreateAnswer(String, Option<RTCAnswerOptions>),
+    CreateDataChannel(String, String),
     CreateOffer(String, Option<RTCOfferOptions>),
     SetRemoteDescription(String, RTCSessionDescription),
 }
@@ -348,6 +349,75 @@ fn registry_exists<'a>(resource: ResourceArc<Ref>, registry_uuid: Term<'a>) -> R
 }
 
 #[rustler::nif]
+fn create_answer<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+    voice_activity_detection: bool,
+) -> Term<'a> {
+    let state = match resource.0.try_lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let answer_opts = RTCAnswerOptions {
+        voice_activity_detection,
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx
+            .send(RTCPCMsg::CreateAnswer(uuid, Some(answer_opts)))
+            .await
+        {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
+/// Implemented without options to facilitate the creation of offers with ufrag and pwd,
+/// so that these offers may be given to other peer connections without errors.
+#[rustler::nif]
+fn create_data_channel<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+    label: String,
+) -> Term<'a> {
+    let state = match resource.0.try_lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx.send(RTCPCMsg::CreateDataChannel(uuid, label)).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
+/// Create an offer. Note that media tracks and data channels must be given to these
+/// peer connection prior to calling this.
+#[rustler::nif]
 fn create_offer<'a>(
     env: Env<'a>,
     resource: ResourceArc<Ref>,
@@ -492,12 +562,50 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
         // break out of the loop.
         loop {
             match rx.recv().await {
+                Some(RTCPCMsg::CreateAnswer(uuid, opts)) => {
+                    let lock = pc.clone();
+                    let resp = match lock.create_answer(opts).await {
+                        Err(err) => Err((uuid, err)),
+                        Ok(answer) => Ok((uuid, answer)),
+                    };
+
+                    let state = resource.0.lock().unwrap();
+                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                        Err((uuid, err)) => {
+                            (atoms::answer_error(), uuid, err.to_string()).encode(env)
+                        }
+                        Ok((uuid, answer)) => (
+                            atoms::answer(),
+                            uuid,
+                            serde_json::to_string(&answer).unwrap(),
+                        )
+                            .encode(env),
+                    });
+                }
+                Some(RTCPCMsg::CreateDataChannel(uuid, label)) => {
+                    let lock = pc.clone();
+                    let resp = match lock.create_data_channel(&label, None).await {
+                        Err(err) => Err((uuid, err)),
+                        Ok(data_channel) => Ok((uuid, data_channel)),
+                    };
+
+                    let state = resource.0.lock().unwrap();
+                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                        Err((uuid, err)) => {
+                            (atoms::offer_error(), uuid, err.to_string()).encode(env)
+                        }
+                        Ok((uuid, _data_channel)) => {
+                            (atoms::data_channel_created(), uuid).encode(env)
+                        }
+                    });
+                }
                 Some(RTCPCMsg::CreateOffer(uuid, opts)) => {
                     let lock = pc.clone();
                     let resp = match lock.create_offer(opts).await {
                         Err(err) => Err((uuid, err)),
                         Ok(offer) => Ok((uuid, offer)),
                     };
+
                     let state = resource.0.lock().unwrap();
                     msg_env.send_and_clear(&state.pid, |env| match resp {
                         Err((uuid, err)) => {
@@ -515,6 +623,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                         Err(err) => Err((uuid, err)),
                         Ok(_) => Ok(uuid),
                     };
+
                     let state = resource.0.lock().unwrap();
                     msg_env.send_and_clear(&state.pid, |env| match resp {
                         Err((uuid, err)) => {

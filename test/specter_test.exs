@@ -212,13 +212,16 @@ defmodule SpecterTest do
       assert {:error, :not_found} = Specter.create_offer(specter, UUID.uuid4())
     end
 
-    test "returns :ok and then sends an offer", %{
+    test "returns :ok and then sends an offer json", %{
       specter: specter,
       peer_connection: peer_connection
     } do
       assert :ok = Specter.create_offer(specter, peer_connection)
       assert_receive {:offer, ^peer_connection, offer}
       assert is_binary(offer)
+
+      assert {:ok, offer_json} = Jason.decode(offer)
+      assert %{"type" => "offer", "sdp" => _sdp} = offer_json
     end
 
     test "returns :ok with VAD", %{
@@ -239,6 +242,72 @@ defmodule SpecterTest do
     } do
       assert :ok = Specter.create_offer(specter, peer_connection, ice_restart: true)
       assert_receive {:offer_error, ^peer_connection, "ICEAgent does not exist"}
+    end
+  end
+
+  describe "create_data_channel" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.create_data_channel(specter, UUID.uuid4(), "foo")
+    end
+
+    test "sends an :ok message to elixir, and adds it to offers", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.create_offer(specter, peer_connection)
+      assert_receive {:offer, ^peer_connection, offer}
+      refute String.contains?(offer, "ice-ufrag")
+      refute String.contains?(offer, "ice-pwd")
+      refute String.contains?(offer, "webrtc-datachannel")
+
+      assert :ok = Specter.create_data_channel(specter, peer_connection, "foo")
+      assert_receive {:data_channel_created, ^peer_connection}
+
+      assert :ok = Specter.create_offer(specter, peer_connection)
+      assert_receive {:offer, ^peer_connection, offer}
+      assert {:ok, offer_json} = Jason.decode(offer)
+
+      assert String.contains?(offer_json["sdp"], "ice-ufrag")
+      assert String.contains?(offer_json["sdp"], "ice-pwd")
+
+      assert String.contains?(
+               offer_json["sdp"],
+               "m=application 9 UDP/DTLS/SCTP webrtc-datachannel"
+             )
+    end
+  end
+
+  describe "create_answer" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.create_answer(specter, UUID.uuid4())
+    end
+
+    test "returns :ok and then sends an answer", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      api = init_api(specter)
+      pc_offer = init_peer_connection(specter, api)
+      assert :ok = Specter.create_data_channel(specter, pc_offer, "foo")
+      assert_receive {:data_channel_created, ^pc_offer}
+      assert :ok = Specter.create_offer(specter, pc_offer)
+      assert_receive {:offer, ^pc_offer, offer}
+
+      offer = Jason.decode!(offer)
+
+      assert :ok = Specter.set_remote_description(specter, peer_connection, :offer, offer["sdp"])
+      assert_receive {:ok, ^peer_connection, :set_remote_description}
+
+      assert :ok = Specter.create_answer(specter, peer_connection)
+      assert_receive {:answer, ^peer_connection, answer}
+      assert is_binary(answer)
+
+      assert {:ok, answer_json} = Jason.decode(answer)
+      assert %{"type" => "answer", "sdp" => _sdp} = answer_json
     end
   end
 end

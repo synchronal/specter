@@ -21,6 +21,19 @@ defmodule Specter.Native do
   def close_peer_connection(_ref, _pc), do: error()
 
   @doc """
+  Create an answer from an RTCPeerConnection that has been given a remote description.
+  """
+  @spec create_answer(t(), Specter.peer_connection_t(), boolean) :: :ok | {:error, term()}
+  def create_answer(_ref, _pc, _vad), do: error()
+
+  @doc """
+  Add a data channel to an RTCPeerConnection.
+  """
+  @spec create_data_channel(t(), Specter.peer_connection_t(), String.t()) ::
+          :ok | {:error, term()}
+  def create_data_channel(_ref, _pc, _label), do: error()
+
+  @doc """
   Create an offer from an RTCPeerConnection.
   """
   @spec create_offer(t(), Specter.peer_connection_t(), bool(), bool()) :: :ok | {:error, term()}

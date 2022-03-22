@@ -3,6 +3,7 @@ rustler::atoms! {
     error,
 
     // errors
+    answer_error,
     invalid_atom,
     invalid_json,
     invalid_remote_description,
@@ -17,6 +18,7 @@ rustler::atoms! {
     webrtc_error,
 
     // send
+    data_channel_created,
     peer_connection_closed,
     peer_connection_error,
     peer_connection_ready,
