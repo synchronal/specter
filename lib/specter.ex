@@ -57,11 +57,16 @@ defmodule Specter do
   defstruct [:native]
 
   @typedoc """
-  `t:Specter.t/0` references are returned from `init/1`, and represent the
-  state held in the NIF. All functions interacting with NIF state take a
-  `t:Specter.t/0` as their first argument.
+  `t:native_t/0` references are returned from the NIF, and represent state held
+  in Rust code.
   """
-  @type t() :: %Specter{native: Specter.Native.t()}
+  @opaque native_t() :: Specter.Native.t()
+
+  @typedoc """
+  `t:Specter.t/0` wraps the reference returned from `init/1`. All functions interacting with
+  NIF state take a `t:Specter.t/0` as their first argument.
+  """
+  @type t() :: %Specter{native: native_t()}
 
   @typedoc """
   `t:Specter.api_t/0` represent an instantiated API managed in the NIF.
@@ -178,7 +183,8 @@ defmodule Specter do
   def close_peer_connection(%Specter{native: ref}, pc), do: Native.close_peer_connection(ref, pc)
 
   @doc """
-  Given an RTCPeerConnection, create an answer that can be passed to another connection.
+  Given an RTCPeerConnection where the remote description has been assigned via
+  `set_remote_description/4`, create an answer that can be passed to another connection.
 
   | param             | type                 | default |
   | ----------------- | -------------------- | ------- |
@@ -200,7 +206,8 @@ defmodule Specter do
   Creates a data channel on an RTCPeerConnection.
 
   Note: this can be useful when attempting to generate a valid offer, but where no media
-  tracks are expected to be sent or received.
+  tracks are expected to be sent or received. Callbacks from data channels have not yet
+  been implemented.
   """
   @spec create_data_channel(t(), peer_connection_t(), String.t()) :: :ok | {:error, term()}
   def create_data_channel(%Specter{native: ref}, pc, label),
