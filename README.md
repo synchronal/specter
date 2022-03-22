@@ -32,7 +32,8 @@ end
 - [x] `Specter.set_remote_description/4` (ref, uuid, offer/answer, sdp)
 - [x] `Specter.create_offer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`, `ice_restart`: `bool`)
-- [ ] `Specter.create_answer/3` (ref, uuid, opts)
+- [x] `Specter.create_data_channel/3` (ref, uuid, label)
+- [x] `Specter.create_answer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`)
 - [ ] `Specter.set_local_description`
 - [ ] `Specter.subscribe_to_state_changes/2` (ref, uuid)
