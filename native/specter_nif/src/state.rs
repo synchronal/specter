@@ -150,7 +150,7 @@ fn init<'a>(env: Env<'a>, opts: Term<'a>) -> Term<'a> {
 
 #[rustler::nif(name = "config")]
 fn get_config<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, Atom> {
-    let state = match resource.0.try_lock() {
+    let state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
@@ -168,7 +168,7 @@ fn get_config<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, 
 ///   behaviors of RTCPeerConnections?
 #[rustler::nif]
 fn new_media_engine<'a>(resource: ResourceArc<Ref>) -> Result<String, Atom> {
-    let mut state = match resource.0.try_lock() {
+    let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
@@ -194,7 +194,7 @@ fn new_registry<'a>(
     resource: ResourceArc<Ref>,
     media_engine_uuid: Term<'a>,
 ) -> Result<String, Atom> {
-    let mut state = match resource.0.try_lock() {
+    let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
@@ -227,7 +227,7 @@ fn new_api<'a>(
     media_engine_uuid: Term<'a>,
     registry_uuid: Term<'a>,
 ) -> Result<String, Atom> {
-    let mut state = match resource.0.try_lock() {
+    let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
@@ -281,7 +281,7 @@ fn close_peer_connection<'a>(
     resource: ResourceArc<Ref>,
     pc_uuid: Term<'a>,
 ) -> Term<'a> {
-    let mut state = match resource.0.try_lock() {
+    let mut state = match resource.0.lock() {
         Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
         Ok(guard) => guard,
     };
@@ -305,7 +305,7 @@ fn media_engine_exists<'a>(
     resource: ResourceArc<Ref>,
     media_engine_uuid: Term<'a>,
 ) -> Result<bool, Atom> {
-    let mut state = match resource.0.try_lock() {
+    let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
@@ -320,7 +320,7 @@ fn media_engine_exists<'a>(
 /// for the given UUID.
 #[rustler::nif]
 fn peer_connection_exists<'a>(resource: ResourceArc<Ref>, pc_uuid: Term<'a>) -> Result<bool, Atom> {
-    let state = match resource.0.try_lock() {
+    let state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
@@ -337,7 +337,7 @@ fn peer_connection_exists<'a>(resource: ResourceArc<Ref>, pc_uuid: Term<'a>) -> 
 /// See `media_engine_exists` for Notes.
 #[rustler::nif]
 fn registry_exists<'a>(resource: ResourceArc<Ref>, registry_uuid: Term<'a>) -> Result<bool, Atom> {
-    let mut state = match resource.0.try_lock() {
+    let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
     };
@@ -355,7 +355,7 @@ fn create_answer<'a>(
     pc_uuid: Term<'a>,
     voice_activity_detection: bool,
 ) -> Term<'a> {
-    let state = match resource.0.try_lock() {
+    let state = match resource.0.lock() {
         Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
         Ok(guard) => guard,
     };
@@ -393,7 +393,7 @@ fn create_data_channel<'a>(
     pc_uuid: Term<'a>,
     label: String,
 ) -> Term<'a> {
-    let state = match resource.0.try_lock() {
+    let state = match resource.0.lock() {
         Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
         Ok(guard) => guard,
     };
@@ -425,7 +425,7 @@ fn create_offer<'a>(
     voice_activity_detection: bool,
     ice_restart: bool,
 ) -> Term<'a> {
-    let state = match resource.0.try_lock() {
+    let state = match resource.0.lock() {
         Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
         Ok(guard) => guard,
     };
@@ -461,7 +461,7 @@ fn set_remote_description<'a>(
     pc_uuid: Term<'a>,
     sdp: String,
 ) -> Term<'a> {
-    let state = match resource.0.try_lock() {
+    let state = match resource.0.lock() {
         Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
         Ok(guard) => guard,
     };
