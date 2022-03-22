@@ -192,7 +192,9 @@ defmodule SpecterTest do
     } do
       offer = "Hello world"
       assert :ok = Specter.set_remote_description(specter, peer_connection, :offer, offer)
-      assert_receive {:error, ^peer_connection, :invalid_remote_description}
+
+      assert_receive {:invalid_remote_description, ^peer_connection,
+                      "SdpInvalidSyntax: Hello world"}
     end
 
     test "returns an error when peer connection does not exist", %{specter: specter} do
@@ -215,6 +217,26 @@ defmodule SpecterTest do
       assert :ok = Specter.create_offer(specter, peer_connection)
       assert_receive {:offer, ^peer_connection, offer}
       assert is_binary(offer)
+    end
+
+    test "returns :ok with VAD", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.create_offer(specter, peer_connection, voice_activity_detection: true)
+      assert_receive {:offer, ^peer_connection, offer}
+      assert is_binary(offer)
+
+      # assert offer is different... somehow? maybe after more interactions are available, the generated
+      # SDP will actually be different.
+    end
+
+    test "returns error with ice_restart before ICE has started", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.create_offer(specter, peer_connection, ice_restart: true)
+      assert_receive {:offer_error, ^peer_connection, "ICEAgent does not exist"}
     end
   end
 end

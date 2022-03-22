@@ -495,13 +495,13 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                 Some(RTCPCMsg::CreateOffer(uuid, opts)) => {
                     let lock = pc.clone();
                     let resp = match lock.create_offer(opts).await {
-                        Err(_) => Err(uuid),
+                        Err(err) => Err((uuid, err)),
                         Ok(offer) => Ok((uuid, offer)),
                     };
                     let state = resource.0.lock().unwrap();
                     msg_env.send_and_clear(&state.pid, |env| match resp {
-                        Err(uuid) => {
-                            (atoms::error(), uuid, atoms::error_creating_offer()).encode(env)
+                        Err((uuid, err)) => {
+                            (atoms::offer_error(), uuid, err.to_string()).encode(env)
                         }
                         Ok((uuid, offer)) => {
                             (atoms::offer(), uuid, serde_json::to_string(&offer).unwrap())
@@ -512,11 +512,18 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                 Some(RTCPCMsg::SetRemoteDescription(uuid, session)) => {
                     let lock = pc.clone();
                     let resp = match lock.set_remote_description(session).await {
-                        Err(_) => (atoms::error(), uuid, atoms::invalid_remote_description()),
-                        Ok(_) => (atoms::ok(), uuid, atoms::set_remote_description()),
+                        Err(err) => Err((uuid, err)),
+                        Ok(_) => Ok(uuid),
                     };
                     let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| resp.encode(env));
+                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                        Err((uuid, err)) => {
+                            (atoms::invalid_remote_description(), uuid, err.to_string()).encode(env)
+                        }
+                        Ok(uuid) => {
+                            (atoms::ok(), uuid, atoms::set_remote_description()).encode(env)
+                        }
+                    });
                 }
                 None => break,
             }
