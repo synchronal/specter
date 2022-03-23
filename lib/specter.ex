@@ -1,9 +1,16 @@
 defmodule Specter do
   @moduledoc """
   Specter is a method for managing data structures and entities provided by
-  webrtc.rs. It is intended as a low-level library with some small set of
+  `webrtc.rs`. It is intended as a low-level library with some small set of
   opinions, which can composed into more complex behaviors by higher-level
   libraries and applications.
+
+  ## Key points
+
+  Specter wraps `webrtc.rs`, which heavily utilizes async Rust. For this reason,
+  many functions cannot be automatically awaited by the caller—the NIF functions
+  send messages across channels to separate threads managed by Rust, which send
+  messages back to Elixir that can be caught by `receive` or `handle_info`.
 
   ## Usage
 
