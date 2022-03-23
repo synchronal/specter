@@ -48,6 +48,19 @@ defmodule Specter.Native do
   def config(_ref), do: error()
 
   @doc """
+  Sends back the current session description. Will be nil until the peer connection successfully
+  negotiates ICE, even if an offer or answer has been set as the local description.
+  """
+  @spec current_local_description(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def current_local_description(_ref, _pc), do: error()
+
+  @doc """
+  Sends back the pending or current session description, depending on the state of the connection.
+  """
+  @spec local_description(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def local_description(_ref, _pc), do: error()
+
+  @doc """
   Checks whether the UUID representing a MediaEngine points to an initialized
   MediaEngine that has not been moved into a context owned by some other resource.
   """
@@ -99,6 +112,13 @@ defmodule Specter.Native do
   @spec peer_connection_exists(t(), Specter.peer_connection_t()) ::
           {:ok, boolean()} | {:error, term()}
   def peer_connection_exists(_ref, _pc), do: error()
+
+  @doc """
+  Sends back the pending session description. May be nil after the peer connection successfully
+  negotiates its connection.
+  """
+  @spec pending_local_description(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def pending_local_description(_ref, _pc), do: error()
 
   @doc """
   Checks whether the UUID representing a Registry points to an initialized

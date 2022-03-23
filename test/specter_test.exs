@@ -18,6 +18,22 @@ defmodule SpecterTest do
     end
   end
 
+  describe "close_peer_connection" do
+    setup [:initialize_specter, :init_api]
+
+    test "returns {:error, :not_found} when given a random api id", %{specter: specter} do
+      assert {:error, :not_found} = Specter.close_peer_connection(specter, UUID.uuid4())
+    end
+
+    test "returns :ok, then receives a closed message", %{specter: specter, api: api} do
+      assert {:ok, pc} = Specter.new_peer_connection(specter, api)
+      assert_receive {:peer_connection_ready, ^pc}
+
+      assert :ok = Specter.close_peer_connection(specter, pc)
+      assert_receive {:peer_connection_closed, ^pc}
+    end
+  end
+
   describe "config" do
     test "returns the current configuration" do
       assert {:ok, ref} =
@@ -38,28 +54,29 @@ defmodule SpecterTest do
     end
   end
 
-  describe "new_media_engine" do
-    setup :initialize_specter
+  describe "current_local_description" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
 
-    test "returns a UUID", %{specter: specter} do
-      assert {:ok, media_engine} = Specter.new_media_engine(specter)
-      assert is_binary(media_engine)
-      assert String.match?(media_engine, @uuid_regex)
-    end
-  end
-
-  describe "new_registry" do
-    setup :initialize_specter
-
-    test "returns a UUID", %{specter: specter} do
-      assert {:ok, media_engine} = Specter.new_media_engine(specter)
-      assert {:ok, registry} = Specter.new_registry(specter, media_engine)
-      assert is_binary(registry)
-      assert String.match?(registry, @uuid_regex)
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.current_local_description(specter, UUID.uuid4())
     end
 
-    test "returns {:error, :not_found} when given a random media engine id", %{specter: specter} do
-      assert {:error, :not_found} = Specter.new_registry(specter, UUID.uuid4())
+    test "sends the current local description back to elixir", %{
+      specter: specter,
+      peer_connection: pc
+    } do
+      assert :ok = Specter.current_local_description(specter, pc)
+      assert_receive {:current_local_description, ^pc, nil}
+
+      assert :ok = Specter.create_offer(specter, pc)
+      assert_receive {:offer, ^pc, offer}
+
+      assert :ok = Specter.set_local_description(specter, pc, offer)
+      assert_receive {:ok, ^pc, :set_local_description}
+
+      ## asserting non-nil current desc requires successful ICE negotiation
+      # assert :ok = Specter.current_local_description(specter, pc)
+      # refute_receive {:current_local_description, ^pc, nil}
     end
   end
 
@@ -92,6 +109,31 @@ defmodule SpecterTest do
     end
   end
 
+  describe "new_media_engine" do
+    setup :initialize_specter
+
+    test "returns a UUID", %{specter: specter} do
+      assert {:ok, media_engine} = Specter.new_media_engine(specter)
+      assert is_binary(media_engine)
+      assert String.match?(media_engine, @uuid_regex)
+    end
+  end
+
+  describe "new_registry" do
+    setup :initialize_specter
+
+    test "returns a UUID", %{specter: specter} do
+      assert {:ok, media_engine} = Specter.new_media_engine(specter)
+      assert {:ok, registry} = Specter.new_registry(specter, media_engine)
+      assert is_binary(registry)
+      assert String.match?(registry, @uuid_regex)
+    end
+
+    test "returns {:error, :not_found} when given a random media engine id", %{specter: specter} do
+      assert {:error, :not_found} = Specter.new_registry(specter, UUID.uuid4())
+    end
+  end
+
   describe "new_peer_connection" do
     setup [:initialize_specter, :init_api]
 
@@ -108,19 +150,28 @@ defmodule SpecterTest do
     end
   end
 
-  describe "close_peer_connection" do
-    setup [:initialize_specter, :init_api]
+  describe "local_description" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
 
-    test "returns {:error, :not_found} when given a random api id", %{specter: specter} do
-      assert {:error, :not_found} = Specter.close_peer_connection(specter, UUID.uuid4())
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.local_description(specter, UUID.uuid4())
     end
 
-    test "returns :ok, then receives a closed message", %{specter: specter, api: api} do
-      assert {:ok, pc} = Specter.new_peer_connection(specter, api)
-      assert_receive {:peer_connection_ready, ^pc}
+    test "sends the pending local description back to elixir before ICE finishes", %{
+      specter: specter,
+      peer_connection: pc
+    } do
+      assert :ok = Specter.local_description(specter, pc)
+      assert_receive {:local_description, ^pc, nil}
 
-      assert :ok = Specter.close_peer_connection(specter, pc)
-      assert_receive {:peer_connection_closed, ^pc}
+      assert :ok = Specter.create_offer(specter, pc)
+      assert_receive {:offer, ^pc, offer}
+
+      assert :ok = Specter.set_local_description(specter, pc, offer)
+      assert_receive {:ok, ^pc, :set_local_description}
+
+      assert :ok = Specter.local_description(specter, pc)
+      assert_receive {:local_description, ^pc, ^offer}
     end
   end
 
@@ -150,6 +201,31 @@ defmodule SpecterTest do
       assert_receive {:peer_connection_ready, ^pc}
 
       assert Specter.peer_connection_exists?(specter, pc)
+    end
+  end
+
+  describe "pending_local_description" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.pending_local_description(specter, UUID.uuid4())
+    end
+
+    test "sends the pending local description back to elixir before ICE finishes", %{
+      specter: specter,
+      peer_connection: pc
+    } do
+      assert :ok = Specter.pending_local_description(specter, pc)
+      assert_receive {:pending_local_description, ^pc, nil}
+
+      assert :ok = Specter.create_offer(specter, pc)
+      assert_receive {:offer, ^pc, offer}
+
+      assert :ok = Specter.set_local_description(specter, pc, offer)
+      assert_receive {:ok, ^pc, :set_local_description}
+
+      assert :ok = Specter.pending_local_description(specter, pc)
+      assert_receive {:pending_local_description, ^pc, ^offer}
     end
   end
 

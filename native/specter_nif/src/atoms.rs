@@ -19,10 +19,13 @@ rustler::atoms! {
     webrtc_error,
 
     // send
+    current_local_description,
     data_channel_created,
+    local_description,
     peer_connection_closed,
     peer_connection_error,
     peer_connection_ready,
+    pending_local_description,
     set_local_description,
     set_remote_description,
 

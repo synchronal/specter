@@ -246,6 +246,65 @@ defmodule Specter do
       )
 
   @doc """
+  Sends back the value of the current session description on a peer connection. This will
+  send back JSON representing an offer or an answer when the peer connection has had
+  `set_local_description/3` called and has successfully negotiated ICE. In all other cases,
+  `nil` will be sent.
+
+  See `pending_local_description/2` and `local_description/2`.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init()
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc}
+      iex> Specter.current_local_description(specter, pc)
+      :ok
+      iex> assert_receive {:current_local_description, ^pc, nil}
+  """
+  @spec current_local_description(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def current_local_description(%Specter{native: ref}, pc),
+    do: Native.current_local_description(ref, pc)
+
+  @doc """
+  Sends back the value of the local session description on a peer connection. This will
+  send back JSON representing an offer or an answer when the peer connection has had
+  `set_local_description/3` called. If ICE has been successfully negotated, the current
+  local description will be sent back, otherwise the caller will receive the pending
+  local description.
+
+  See `current_local_description/2` and `pending_local_description/2`.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init()
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc}
+      ...>
+      iex> Specter.local_description(specter, pc)
+      :ok
+      iex> assert_receive {:local_description, ^pc, nil}
+      ...>
+      iex> :ok = Specter.create_offer(specter, pc)
+      iex> assert_receive {:offer, ^pc, offer}
+      iex> :ok = Specter.set_local_description(specter, pc, offer)
+      iex> assert_receive {:ok, ^pc, :set_local_description}
+      ...>
+      iex> Specter.local_description(specter, pc)
+      :ok
+      iex> assert_receive {:local_description, ^pc, ^offer}
+  """
+  @spec local_description(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def local_description(%Specter{native: ref}, pc),
+    do: Native.local_description(ref, pc)
+
+  @doc """
   Returns true or false, depending on whether the media engine is available for
   consumption, i.e. is initialized and has not been used by a function that takes
   ownership of it.
@@ -394,6 +453,36 @@ defmodule Specter do
         raise "Unable to determine whether peer connection exists:\n#{inspect(error)}"
     end
   end
+
+  @doc """
+  Sends back the value of the session description on a peer connection that is pending
+  connection, or nil.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init()
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc}
+      ...>
+      iex> Specter.pending_local_description(specter, pc)
+      :ok
+      iex> assert_receive {:pending_local_description, ^pc, nil}
+      ...>
+      iex> :ok = Specter.create_offer(specter, pc)
+      iex> assert_receive {:offer, ^pc, offer}
+      iex> :ok = Specter.set_local_description(specter, pc, offer)
+      iex> assert_receive {:ok, ^pc, :set_local_description}
+      ...>
+      iex> Specter.pending_local_description(specter, pc)
+      :ok
+      iex> assert_receive {:pending_local_description, ^pc, ^offer}
+  """
+  @spec pending_local_description(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def pending_local_description(%Specter{native: ref}, pc),
+    do: Native.pending_local_description(ref, pc)
 
   @doc """
   Returns true or false, depending on whether the registry is available for

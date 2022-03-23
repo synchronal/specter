@@ -36,9 +36,9 @@ end
 - [x] `Specter.create_answer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`)
 - [x] `Specter.set_local_description/3` (ref, uuid, json)
-- [ ] `Specter.local_description`
-- [ ] `Specter.current_remote_description`
-- [ ] `Specter.pending_remote_description`
+- [x] `Specter.current_remote_description/2`
+- [x] `Specter.pending_remote_description/2`
+- [x] `Specter.local_description/2`
 - [ ] `Specter.subscribe_to_state_changes` (ref, uuid)
   - state changes sent to Elixir pid
 - [ ] `pc.on_ice_candidate` sends candidate to callback process

@@ -31,6 +31,9 @@ pub enum RTCPCMsg {
     CreateAnswer(String, Option<RTCAnswerOptions>),
     CreateDataChannel(String, String),
     CreateOffer(String, Option<RTCOfferOptions>),
+    GetCurrentLocalDescription(String),
+    GetLocalDescription(String),
+    GetPendingLocalDescription(String),
     SetLocalDescription(String, RTCSessionDescription),
     SetRemoteDescription(String, RTCSessionDescription),
 }
@@ -158,6 +161,93 @@ fn get_config<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, 
 
     let config = &state.config;
     Ok(config.encode(env))
+}
+
+/// Note that this is nil until the peer connection has successfully negotiated its connection.
+#[rustler::nif(name = "current_local_description")]
+fn get_current_local_description<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx.send(RTCPCMsg::GetCurrentLocalDescription(uuid)).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
+/// Sends back either the current or pending session description.
+#[rustler::nif(name = "local_description")]
+fn get_local_description<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx.send(RTCPCMsg::GetLocalDescription(uuid)).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
+/// Note that this may be nil after ICE negotiates.
+#[rustler::nif(name = "pending_local_description")]
+fn get_pending_local_description<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx.send(RTCPCMsg::GetPendingLocalDescription(uuid)).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
 }
 
 /// Create a MediaEngine object to configure the default supported codecs.
@@ -655,6 +745,66 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                             (atoms::offer(), uuid, serde_json::to_string(&offer).unwrap())
                                 .encode(env)
                         }
+                    });
+                }
+                Some(RTCPCMsg::GetCurrentLocalDescription(uuid)) => {
+                    let lock = pc.clone();
+                    let resp = lock.current_local_description().await;
+
+                    let state = resource.0.lock().unwrap();
+                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                        None => (
+                            atoms::current_local_description(),
+                            uuid,
+                            rustler::types::atom::nil(),
+                        )
+                            .encode(env),
+                        Some(desc) => (
+                            atoms::current_local_description(),
+                            uuid,
+                            serde_json::to_string(&desc).unwrap(),
+                        )
+                            .encode(env),
+                    });
+                }
+                Some(RTCPCMsg::GetLocalDescription(uuid)) => {
+                    let lock = pc.clone();
+                    let resp = lock.local_description().await;
+
+                    let state = resource.0.lock().unwrap();
+                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                        None => (
+                            atoms::local_description(),
+                            uuid,
+                            rustler::types::atom::nil(),
+                        )
+                            .encode(env),
+                        Some(desc) => (
+                            atoms::local_description(),
+                            uuid,
+                            serde_json::to_string(&desc).unwrap(),
+                        )
+                            .encode(env),
+                    });
+                }
+                Some(RTCPCMsg::GetPendingLocalDescription(uuid)) => {
+                    let lock = pc.clone();
+                    let resp = lock.pending_local_description().await;
+
+                    let state = resource.0.lock().unwrap();
+                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                        None => (
+                            atoms::pending_local_description(),
+                            uuid,
+                            rustler::types::atom::nil(),
+                        )
+                            .encode(env),
+                        Some(desc) => (
+                            atoms::pending_local_description(),
+                            uuid,
+                            serde_json::to_string(&desc).unwrap(),
+                        )
+                            .encode(env),
                     });
                 }
                 Some(RTCPCMsg::SetLocalDescription(uuid, session)) => {
