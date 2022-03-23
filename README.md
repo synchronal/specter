@@ -29,13 +29,13 @@ end
   - arg2: registry uuid
 - [x] `Specter.new_peer_connection/2` (ref, uuid), returning UUID
   - arg1: api builder uuid
-- [x] `Specter.set_remote_description/4` (ref, uuid, offer/answer, sdp)
+- [x] `Specter.set_remote_description/3` (ref, uuid, json)
 - [x] `Specter.create_offer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`, `ice_restart`: `bool`)
 - [x] `Specter.create_data_channel/3` (ref, uuid, label)
 - [x] `Specter.create_answer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`)
-- [ ] `Specter.set_local_description`
+- [x] `Specter.set_local_description/3` (ref, uuid, json)
 - [ ] `Specter.local_description`
 - [ ] `Specter.current_remote_description`
 - [ ] `Specter.pending_remote_description`

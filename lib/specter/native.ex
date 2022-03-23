@@ -108,12 +108,21 @@ defmodule Specter.Native do
   def registry_exists(_ref, _registry), do: error()
 
   @doc """
-  Given an SDP offer and a UUID representing an RTCPeerConnection, set the offer on the
-  connection.
+  Given a UUID representing an RTCPeerConnection and an offer or an answer from that same
+  peer connection, set it as the local session description.
   """
-  @spec set_remote_description(t(), Specter.peer_connection_t(), Specter.sdp_t()) ::
+  @spec set_local_description(t(), Specter.peer_connection_t(), Specter.session_description_t()) ::
           :ok | {:error, term()}
-  def set_remote_description(_ref, _peer_connection, _offer), do: error()
+  def set_local_description(_ref, _pc, _desc), do: error()
+
+  @doc """
+  Given a UUID representing an RTCPeerConnection and an offer from that peer connection or an
+  answer from a different peer connection, set it on the peer connection as the remote session
+  description.
+  """
+  @spec set_remote_description(t(), Specter.peer_connection_t(), Specter.session_description_t()) ::
+          :ok | {:error, term()}
+  def set_remote_description(_ref, _pc, _desc), do: error()
 
   ##
   ## PRIVATE

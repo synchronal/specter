@@ -6,6 +6,7 @@ rustler::atoms! {
     answer_error,
     invalid_atom,
     invalid_json,
+    invalid_local_description,
     invalid_remote_description,
     lock_fail,
     not_found,
@@ -22,6 +23,7 @@ rustler::atoms! {
     peer_connection_closed,
     peer_connection_error,
     peer_connection_ready,
+    set_local_description,
     set_remote_description,
 
     answer,

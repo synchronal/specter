@@ -26,6 +26,7 @@ rustler::init!(
         state::new_registry,
         state::peer_connection_exists,
         state::registry_exists,
+        state::set_local_description,
         state::set_remote_description,
     ],
     load = on_load

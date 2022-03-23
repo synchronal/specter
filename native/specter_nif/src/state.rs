@@ -31,6 +31,7 @@ pub enum RTCPCMsg {
     CreateAnswer(String, Option<RTCAnswerOptions>),
     CreateDataChannel(String, String),
     CreateOffer(String, Option<RTCOfferOptions>),
+    SetLocalDescription(String, RTCSessionDescription),
     SetRemoteDescription(String, RTCSessionDescription),
 }
 
@@ -452,6 +453,45 @@ fn create_offer<'a>(
     (atoms::ok()).encode(env)
 }
 
+/// Receives an offer or an answer pertaining to a specific peer connection,
+/// and sets it as the local session description.
+#[rustler::nif]
+fn set_local_description<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+    sdp: String,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let session_description = match serde_json::from_str::<RTCSessionDescription>(&sdp) {
+        Err(_) => return (atoms::error(), atoms::invalid_json()).encode(env),
+        Ok(s) => s,
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx
+            .send(RTCPCMsg::SetLocalDescription(uuid, session_description))
+            .await
+        {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
 /// Receives an offer or an answer from a remote entity, and sets it on an
 /// existing RTCPeerConnection.
 #[rustler::nif]
@@ -477,14 +517,14 @@ fn set_remote_description<'a>(
     //     ..Default::default()
     // };
 
-    let session_description = match serde_json::from_str::<RTCSessionDescription>(&sdp) {
-        Err(_) => return (atoms::error(), atoms::invalid_json()).encode(env),
-        Ok(s) => s,
-    };
-
     let tx = match state.get_peer_connection(pc_uuid) {
         None => return (atoms::error(), atoms::not_found()).encode(env),
         Some(tx) => tx.clone(),
+    };
+
+    let session_description = match serde_json::from_str::<RTCSessionDescription>(&sdp) {
+        Err(_) => return (atoms::error(), atoms::invalid_json()).encode(env),
+        Ok(s) => s,
     };
 
     let uuid = pc_uuid.clone().decode().unwrap();
@@ -615,6 +655,21 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                             (atoms::offer(), uuid, serde_json::to_string(&offer).unwrap())
                                 .encode(env)
                         }
+                    });
+                }
+                Some(RTCPCMsg::SetLocalDescription(uuid, session)) => {
+                    let lock = pc.clone();
+                    let resp = match lock.set_local_description(session).await {
+                        Err(err) => Err((uuid, err)),
+                        Ok(_) => Ok(uuid),
+                    };
+
+                    let state = resource.0.lock().unwrap();
+                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                        Err((uuid, err)) => {
+                            (atoms::invalid_local_description(), uuid, err.to_string()).encode(env)
+                        }
+                        Ok(uuid) => (atoms::ok(), uuid, atoms::set_local_description()).encode(env),
                     });
                 }
                 Some(RTCPCMsg::SetRemoteDescription(uuid, session)) => {

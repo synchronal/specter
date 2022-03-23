@@ -167,44 +167,6 @@ defmodule SpecterTest do
     end
   end
 
-  describe "set_remote_description" do
-    setup [:initialize_specter, :init_api, :init_peer_connection]
-
-    @valid_offer """
-    v=0
-    o=- 2927307686215094172 2 IN IP4 127.0.0.1
-    s=-
-    t=0 0
-    a=extmap-allow-mixed
-    a=msid-semantic: WMS
-    a=ice-ufrag:ZZZZ
-    a=ice-pwd:AU/SQPupllyS0SDG/eRWDCfA
-    a=fingerprint:sha-256 B7:D5:86:B0:92:C6:A6:03:80:C8:59:47:25:EC:FF:3F:57:F5:97:EF:76:B9:AA:14:B7:8C:C9:B3:4D:CA:1B:0A
-    """
-
-    test "returns :ok when given an offer", %{specter: specter, peer_connection: peer_connection} do
-      assert :ok = Specter.set_remote_description(specter, peer_connection, :offer, @valid_offer)
-      assert_receive {:ok, ^peer_connection, :set_remote_description}
-      refute_received {:error, ^peer_connection, :invalid_remote_description}
-    end
-
-    test "sends an error message when SDP in invalid", %{
-      specter: specter,
-      peer_connection: peer_connection
-    } do
-      offer = "Hello world"
-      assert :ok = Specter.set_remote_description(specter, peer_connection, :offer, offer)
-
-      assert_receive {:invalid_remote_description, ^peer_connection,
-                      "SdpInvalidSyntax: Hello world"}
-    end
-
-    test "returns an error when peer connection does not exist", %{specter: specter} do
-      assert {:error, :not_found} =
-               Specter.set_remote_description(specter, UUID.uuid4(), :offer, @valid_offer)
-    end
-  end
-
   describe "create_offer" do
     setup [:initialize_specter, :init_api, :init_peer_connection]
 
@@ -297,9 +259,7 @@ defmodule SpecterTest do
       assert :ok = Specter.create_offer(specter, pc_offer)
       assert_receive {:offer, ^pc_offer, offer}
 
-      offer = Jason.decode!(offer)
-
-      assert :ok = Specter.set_remote_description(specter, peer_connection, :offer, offer["sdp"])
+      assert :ok = Specter.set_remote_description(specter, peer_connection, offer)
       assert_receive {:ok, ^peer_connection, :set_remote_description}
 
       assert :ok = Specter.create_answer(specter, peer_connection)
@@ -308,6 +268,78 @@ defmodule SpecterTest do
 
       assert {:ok, answer_json} = Jason.decode(answer)
       assert %{"type" => "answer", "sdp" => _sdp} = answer_json
+    end
+  end
+
+  describe "set_local_description" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.set_local_description(specter, UUID.uuid4(), "")
+    end
+
+    test "returns an error when given invalid json", %{specter: specter, peer_connection: pc} do
+      assert {:error, :invalid_json} = Specter.set_local_description(specter, pc, "{blah:")
+    end
+
+    test "sends :ok when given a valid offer", %{specter: specter, peer_connection: pc} do
+      assert :ok = Specter.create_offer(specter, pc)
+      assert_receive {:offer, ^pc, offer}
+
+      assert :ok = Specter.set_local_description(specter, pc, offer)
+      assert_receive {:ok, ^pc, :set_local_description}
+    end
+
+    test "sends :invalid_local_description when given an invalid session", %{
+      specter: specter,
+      peer_connection: pc
+    } do
+      assert :ok = Specter.set_local_description(specter, pc, ~S[{"type":"offer","sdp":"derp"}])
+      assert_receive {:invalid_local_description, ^pc, "SdpInvalidSyntax: derp"}
+    end
+  end
+
+  describe "set_remote_description" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    @valid_offer_sdp """
+    v=0
+    o=- 2927307686215094172 2 IN IP4 127.0.0.1
+    s=-
+    t=0 0
+    a=extmap-allow-mixed
+    a=msid-semantic: WMS
+    a=ice-ufrag:ZZZZ
+    a=ice-pwd:AU/SQPupllyS0SDG/eRWDCfA
+    a=fingerprint:sha-256 B7:D5:86:B0:92:C6:A6:03:80:C8:59:47:25:EC:FF:3F:57:F5:97:EF:76:B9:AA:14:B7:8C:C9:B3:4D:CA:1B:0A
+    """
+    @valid_offer Jason.encode!(%{type: "offer", sdp: @valid_offer_sdp})
+
+    test "returns :ok when given an offer", %{specter: specter, peer_connection: peer_connection} do
+      assert :ok = Specter.set_remote_description(specter, peer_connection, @valid_offer)
+      assert_receive {:ok, ^peer_connection, :set_remote_description}
+      refute_received {:error, ^peer_connection, :invalid_remote_description}
+    end
+
+    test "sends an error message when SDP in invalid", %{specter: specter, peer_connection: pc} do
+      assert :ok =
+               Specter.set_remote_description(
+                 specter,
+                 pc,
+                 ~S[{"type":"offer","sdp":"Hello world"}]
+               )
+
+      assert_receive {:invalid_remote_description, ^pc, "SdpInvalidSyntax: Hello world"}
+    end
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} =
+               Specter.set_remote_description(specter, UUID.uuid4(), @valid_offer)
+    end
+
+    test "returns an error when given invalid json", %{specter: specter, peer_connection: pc} do
+      assert {:error, :invalid_json} =
+               Specter.set_remote_description(specter, pc, ~S[{"type:"offer","sd}])
     end
   end
 end
