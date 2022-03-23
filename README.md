@@ -43,7 +43,6 @@ end
   - state changes sent to Elixir pid
 - [ ] `pc.on_ice_candidate` sends candidate to callback process
 - [ ] `pc.gathering_complete_promise` sends message to callback process
-- [ ] `Specter.set_description`
 - [ ] `Specter.close`  (ref, uuid)
 
 
@@ -80,4 +79,5 @@ bin/dev/shipit
 This project is indebted to the following sites and references (at the very least).
 
 - https://github.com/scrogson/franz
+- https://webrtc.rs
 
