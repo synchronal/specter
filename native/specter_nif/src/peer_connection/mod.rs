@@ -8,6 +8,7 @@ use serde_json;
 use std::sync::Arc;
 use tokio::sync::mpsc::channel;
 use webrtc::api::API;
+use webrtc::ice_transport::ice_candidate::RTCIceCandidate;
 // use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
@@ -355,9 +356,8 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
 
         let pc = match pc.await {
             Err(_) => {
-                let state = resource.0.lock().unwrap();
-                msg_env.send_and_clear(&state.pid, |env| {
-                    (atoms::peer_connection_error(), uuid).encode(env)
+                msg_env.send_and_clear(&pid, |env| {
+                    (atoms::peer_connection_error(), &uuid).encode(env)
                 });
                 return ();
             }
@@ -374,6 +374,25 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
 
             rx
         };
+
+        // This does something with extra threads... ownership of String is moved,
+        // but in a way where the compiler needs some lifetime clarity; cloning the
+        // data until a cleaner way can be figured out.
+        let pc_uuid = uuid.clone();
+        pc.on_ice_candidate(Box::new(move |c: Option<RTCIceCandidate>| {
+            let uuid = pc_uuid.clone();
+            Box::pin(async move {
+                let mut msg_env = rustler::env::OwnedEnv::new();
+                if let Some(c) = c {
+                    let json = c.to_string();
+                    msg_env.send_and_clear(&pid, |env| {
+                        // (atoms::ice_candidate(), &uuid, json).encode(env)
+                        (atoms::ice_candidate(), uuid, json).encode(env)
+                    });
+                }
+            })
+        }))
+        .await;
 
         // Block on messages being received on the channel for this peer connection.
         // When all senders go out of scope, the receiver will receive `None` and
@@ -525,7 +544,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
 
         let state = resource.0.lock().unwrap();
         msg_env.send_and_clear(&state.pid, |env| {
-            (atoms::peer_connection_closed(), uuid).encode(env)
+            (atoms::peer_connection_closed(), &uuid).encode(env)
         });
     });
 }

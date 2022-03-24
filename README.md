@@ -39,9 +39,9 @@ end
 - [x] `Specter.current_remote_description/2`
 - [x] `Specter.pending_remote_description/2`
 - [x] `Specter.local_description/2`
+- [x] `pc.on_ice_candidate` sends candidate to callback process
 - [ ] `Specter.subscribe_to_state_changes` (ref, uuid)
   - state changes sent to Elixir pid
-- [ ] `pc.on_ice_candidate` sends candidate to callback process
 - [ ] `pc.gathering_complete_promise` sends message to callback process
 - [ ] `Specter.close`  (ref, uuid)
 

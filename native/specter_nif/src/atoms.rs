@@ -21,6 +21,7 @@ rustler::atoms! {
     // send
     current_local_description,
     data_channel_created,
+    ice_candidate,
     local_description,
     peer_connection_closed,
     peer_connection_error,
