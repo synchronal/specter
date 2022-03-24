@@ -1,6 +1,6 @@
 use crate::atoms;
 use rustler::types::elixir_struct;
-use rustler::{Encoder, Env, Term};
+use rustler::{Atom, Encoder, Env, Term};
 use webrtc::ice_transport::ice_server::RTCIceServer;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 
@@ -10,6 +10,21 @@ pub struct Config {
 }
 
 impl Config {
+    pub fn parse<'a>(env: Env<'a>, opts: Term<'a>) -> Result<Config, Atom> {
+        if !opts.is_map() {
+            return Err(atoms::invalid_configuration());
+        };
+
+        let ice_servers = match opts.map_get(atoms::ice_servers().to_term(env)) {
+            Err(_) => return Err(atoms::invalid_configuration()),
+            Ok(servers) => servers.decode().unwrap(),
+        };
+
+        let config = Config::new(ice_servers);
+
+        Ok(config)
+    }
+
     pub fn new(ice_servers: Vec<String>) -> Self {
         Config { ice_servers }
     }
