@@ -17,8 +17,10 @@ defmodule Specter do
   A process initializes Specter via the `init/1` function, which registers the
   current process for callbacks that may be triggered via webrtc entities.
 
+      iex> ## Initialize the library. Register messages to the current pid.
       iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
       ...>
+      iex> ## Create a peer connection's dependencies
       iex> {:ok, media_engine} = Specter.new_media_engine(specter)
       iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
       ...>
@@ -34,15 +36,47 @@ defmodule Specter do
       iex> Specter.registry_exists?(specter, registry)
       false
       ...>
-      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
-      iex> assert_receive {:peer_connection_ready, ^pc}
-      iex> Specter.peer_connection_exists?(specter, pc)
+      iex> ## Create a peer connection
+      iex> {:ok, pc_1} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc_1}
+      iex> Specter.peer_connection_exists?(specter, pc_1)
       true
+      iex> ## Add a thing to be negotiated
+      iex> :ok = Specter.create_data_channel(specter, pc_1, "data")
+      iex> assert_receive {:data_channel_created, ^pc_1}
       ...>
-      iex> Specter.close_peer_connection(specter, pc)
+      iex> ## Create an offer
+      iex> :ok = Specter.create_offer(specter, pc_1)
+      iex> assert_receive {:offer, ^pc_1, offer}
+      iex> :ok = Specter.set_local_description(specter, pc_1, offer)
+      iex> assert_receive {:ok, ^pc_1, :set_local_description}
+      ...>
+      iex> ## Create a second peer connection, to answer back
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc_2} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc_2}
+      ...>
+      iex> ## Begin negotiating offer/answer
+      iex> :ok = Specter.set_remote_description(specter, pc_2, offer)
+      iex> assert_receive {:ok, ^pc_2, :set_remote_description}
+      iex> :ok = Specter.create_answer(specter, pc_2)
+      iex> assert_receive {:answer, ^pc_2, answer}
+      iex> :ok = Specter.set_local_description(specter, pc_2, answer)
+      iex> assert_receive {:ok, ^pc_2, :set_local_description}
+      ...>
+      iex> ## Receive ice candidates
+      iex> assert_receive {:ice_candidate, ^pc_1, _candidate}
+      iex> assert_receive {:ice_candidate, ^pc_2, _candidate}
+      ...>
+      iex> ## Shut everything down
+      iex> Specter.close_peer_connection(specter, pc_1)
       :ok
-      iex> assert_receive {:peer_connection_closed, ^pc}
+      iex> assert_receive {:peer_connection_closed, ^pc_1}
       ...>
+      iex> :ok = Specter.close_peer_connection(specter, pc_2)
+      iex> assert_receive {:peer_connection_closed, ^pc_2}
 
   ## Thoughts
 
