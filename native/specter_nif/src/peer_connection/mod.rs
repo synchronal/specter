@@ -9,9 +9,9 @@ use std::sync::Arc;
 use tokio::sync::mpsc::channel;
 use webrtc::api::API;
 // use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
+use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
-use webrtc::peer_connection::configuration::RTCConfiguration;
 
 pub enum Msg {
     CreateAnswer(String, Option<RTCAnswerOptions>),
@@ -48,11 +48,7 @@ fn new<'a>(resource: ResourceArc<Ref>, api_uuid: Term<'a>) -> Result<String, Ato
 /// Close an RTCPeerConnection. This pops out the Sender for the task holding the peer connection,
 /// causing it to go out of scope. That causes a `None` to come out of the Sender's recv block.
 #[rustler::nif(name = "close_peer_connection")]
-fn close<'a>(
-    env: Env<'a>,
-    resource: ResourceArc<Ref>,
-    pc_uuid: Term<'a>,
-) -> Term<'a> {
+fn close<'a>(env: Env<'a>, resource: ResourceArc<Ref>, pc_uuid: Term<'a>) -> Term<'a> {
     let mut state = match resource.0.lock() {
         Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
         Ok(guard) => guard,
@@ -90,10 +86,7 @@ fn create_answer<'a>(
     let uuid = pc_uuid.clone().decode().unwrap();
 
     task::spawn(async move {
-        match tx
-            .send(Msg::CreateAnswer(uuid, Some(answer_opts)))
-            .await
-        {
+        match tx.send(Msg::CreateAnswer(uuid, Some(answer_opts))).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -354,10 +347,10 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
     task::spawn(async move {
         let mut msg_env = rustler::env::OwnedEnv::new();
 
-        let pc = {
+        let (pc, pid) = {
             let state = resource.0.lock().unwrap();
             let rtc_config = RTCConfiguration::from(&state.config.clone());
-            api.new_peer_connection(rtc_config)
+            (api.new_peer_connection(rtc_config), state.pid.clone())
         };
 
         let pc = match pc.await {
@@ -394,8 +387,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                         Ok(answer) => Ok((uuid, answer)),
                     };
 
-                    let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                    msg_env.send_and_clear(&pid, |env| match resp {
                         Err((uuid, err)) => {
                             (atoms::answer_error(), uuid, err.to_string()).encode(env)
                         }
@@ -414,8 +406,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                         Ok(data_channel) => Ok((uuid, data_channel)),
                     };
 
-                    let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                    msg_env.send_and_clear(&pid, |env| match resp {
                         Err((uuid, err)) => {
                             (atoms::offer_error(), uuid, err.to_string()).encode(env)
                         }
@@ -431,8 +422,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                         Ok(offer) => Ok((uuid, offer)),
                     };
 
-                    let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                    msg_env.send_and_clear(&pid, |env| match resp {
                         Err((uuid, err)) => {
                             (atoms::offer_error(), uuid, err.to_string()).encode(env)
                         }
@@ -446,8 +436,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                     let lock = pc.clone();
                     let resp = lock.current_local_description().await;
 
-                    let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                    msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::current_local_description(),
                             uuid,
@@ -466,8 +455,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                     let lock = pc.clone();
                     let resp = lock.local_description().await;
 
-                    let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                    msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::local_description(),
                             uuid,
@@ -486,8 +474,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                     let lock = pc.clone();
                     let resp = lock.pending_local_description().await;
 
-                    let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                    msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::pending_local_description(),
                             uuid,
@@ -509,8 +496,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                         Ok(_) => Ok(uuid),
                     };
 
-                    let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                    msg_env.send_and_clear(&pid, |env| match resp {
                         Err((uuid, err)) => {
                             (atoms::invalid_local_description(), uuid, err.to_string()).encode(env)
                         }
@@ -524,8 +510,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                         Ok(_) => Ok(uuid),
                     };
 
-                    let state = resource.0.lock().unwrap();
-                    msg_env.send_and_clear(&state.pid, |env| match resp {
+                    msg_env.send_and_clear(&pid, |env| match resp {
                         Err((uuid, err)) => {
                             (atoms::invalid_remote_description(), uuid, err.to_string()).encode(env)
                         }
