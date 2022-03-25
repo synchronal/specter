@@ -4,6 +4,7 @@ rustler::atoms! {
 
     // errors
     answer_error,
+    candidate_error,
     invalid_atom,
     invalid_json,
     invalid_local_description,
@@ -19,6 +20,7 @@ rustler::atoms! {
     webrtc_error,
 
     // send
+    add_ice_candidate,
     current_local_description,
     data_channel_created,
     ice_candidate,

@@ -15,6 +15,7 @@ fn on_load(env: Env, _info: Term) -> bool {
 rustler::init!(
     "Elixir.Specter.Native",
     [
+        peer_connection::add_ice_candidate,
         peer_connection::close,
         peer_connection::create_answer,
         peer_connection::create_data_channel,

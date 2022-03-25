@@ -128,6 +128,12 @@ defmodule Specter do
   `t:Specter.registry_t/0` represent an instantiated intercepter Registry managed in the NIF.
   """
   @opaque registry_t() :: String.t()
+
+  @typedoc """
+  An ICE candidate as JSON.
+  """
+  @type ice_candidate_t() :: String.t()
+
   @typedoc """
   A uri in the form `protocol:host:port`, where protocol is either
   `stun` or `turn`.
@@ -206,6 +212,15 @@ defmodule Specter do
   """
   @spec config(t()) :: {:ok, Specter.Config.t()} | {:error, term()}
   def config(%Specter{native: ref}), do: Native.config(ref)
+
+  @doc """
+  Given an ICE candidate, add it to the given peer connection. Assumes trickle ICE.
+  Candidates must be JSON, with the keys `candidate`, `sdp_mid`, `sdp_mline_index`, and
+  `username_fragment`.
+  """
+  @spec add_ice_candidate(t(), peer_connection_t(), ice_candidate_t()) :: :ok | {:error, term()}
+  def add_ice_candidate(%Specter{native: ref}, pc, candidate),
+    do: Native.add_ice_candidate(ref, pc, candidate)
 
   @doc """
   Closes an open instance of an RTCPeerConnection.

@@ -15,6 +15,14 @@ defmodule Specter.Native do
   end
 
   @doc """
+  Asynchronously adds the candidate to the given RTCPeerConnection.
+  Sends back `{:ok, _uuid, :add_ice_candidate}` when successful.
+  """
+  @spec add_ice_candidate(t(), Specter.peer_connection_t(), Specter.ice_candidate_t()) ::
+          :ok | {:error, term()}
+  def add_ice_candidate(_ref, _pc, _candidate), do: error()
+
+  @doc """
   Closes an RTCPeerConnection represented by the given UUID.
   """
   @spec close_peer_connection(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
