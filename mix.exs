@@ -13,7 +13,7 @@ defmodule Specter.MixProject do
       docs: [
         extras: doc_extras(),
         source_ref: "v#{@version}",
-        main: "Specter"
+        main: "readme"
       ],
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -59,6 +59,7 @@ defmodule Specter.MixProject do
 
   defp doc_extras() do
     [
+      "guides/lifecycle.md",
       "README.md"
     ]
   end

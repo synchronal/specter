@@ -1,6 +1,6 @@
 # Specter
 
-Wrapper for [webrtc.rs](https://webrtc.rs) as an Elixir NIF, using
+`Specter` is a wrapper for [webrtc.rs](https://webrtc.rs) as an Elixir NIF, using
 Rustler.
 
 This library is a low-level interface to the data structures and
@@ -36,8 +36,8 @@ end
 - [x] `Specter.create_answer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`)
 - [x] `Specter.set_local_description/3` (ref, uuid, json)
-- [x] `Specter.current_remote_description/2`
-- [x] `Specter.pending_remote_description/2`
+- [x] `Specter.current_local_description/2`
+- [x] `Specter.pending_local_description/2`
 - [x] `Specter.local_description/2`
 - [x] `pc.on_ice_candidate` sends candidate to callback process
 - [x] `Specter.add_ice_candidate/3` (ref, uuid, string)
