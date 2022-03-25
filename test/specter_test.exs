@@ -134,6 +134,37 @@ defmodule SpecterTest do
     end
   end
 
+  describe "current_remote_description" do
+    setup [
+      :initialize_specter,
+      :init_api,
+      :init_peer_connection,
+      :create_data_channel,
+      :create_offer
+    ]
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.current_remote_description(specter, UUID.uuid4())
+    end
+
+    test "sends the current remote description back to elixir", %{
+      specter: specter,
+      offer: offer
+    } do
+      api = init_api(specter)
+      pc = init_peer_connection(specter, api)
+      assert :ok = Specter.current_remote_description(specter, pc)
+      assert_receive {:current_remote_description, ^pc, nil}
+
+      assert :ok = Specter.set_remote_description(specter, pc, offer)
+      assert_receive {:ok, ^pc, :set_remote_description}
+
+      ## asserting non-nil current desc requires successful ICE negotiation
+      # assert :ok = Specter.current_remote_description(specter, pc)
+      # refute_receive {:current_remote_description, ^pc, nil}
+    end
+  end
+
   describe "new_api" do
     setup :initialize_specter
 
@@ -283,6 +314,36 @@ defmodule SpecterTest do
     end
   end
 
+  describe "pending_remote_description" do
+    setup [
+      :initialize_specter,
+      :init_api,
+      :init_peer_connection,
+      :create_data_channel,
+      :create_offer
+    ]
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.pending_remote_description(specter, UUID.uuid4())
+    end
+
+    test "sends the pending remote description back to elixir before ICE finishes", %{
+      specter: specter,
+      offer: offer
+    } do
+      api = init_api(specter)
+      pc = init_peer_connection(specter, api)
+      assert :ok = Specter.pending_remote_description(specter, pc)
+      assert_receive {:pending_remote_description, ^pc, nil}
+
+      assert :ok = Specter.set_remote_description(specter, pc, offer)
+      assert_receive {:ok, ^pc, :set_remote_description}
+
+      assert :ok = Specter.pending_remote_description(specter, pc)
+      assert_receive {:pending_remote_description, ^pc, ^offer}
+    end
+  end
+
   describe "registry_exists?" do
     setup :initialize_specter
 
@@ -398,6 +459,36 @@ defmodule SpecterTest do
 
       assert {:ok, answer_json} = Jason.decode(answer)
       assert %{"type" => "answer", "sdp" => _sdp} = answer_json
+    end
+  end
+
+  describe "remote_description" do
+    setup [
+      :initialize_specter,
+      :init_api,
+      :init_peer_connection,
+      :create_data_channel,
+      :create_offer
+    ]
+
+    test "returns an error when peer connection does not exist", %{specter: specter} do
+      assert {:error, :not_found} = Specter.remote_description(specter, UUID.uuid4())
+    end
+
+    test "sends the pending remote description back to elixir before ICE finishes", %{
+      specter: specter,
+      offer: offer
+    } do
+      api = init_api(specter)
+      pc = init_peer_connection(specter, api)
+      assert :ok = Specter.remote_description(specter, pc)
+      assert_receive {:remote_description, ^pc, nil}
+
+      assert :ok = Specter.set_remote_description(specter, pc, offer)
+      assert_receive {:ok, ^pc, :set_remote_description}
+
+      assert :ok = Specter.remote_description(specter, pc)
+      assert_receive {:remote_description, ^pc, ^offer}
     end
   end
 

@@ -1,5 +1,18 @@
 defmodule SpecterTest.NifHelpers do
   @moduledoc false
+  import ExUnit.Assertions
+
+  def create_data_channel(%{specter: specter, peer_connection: pc}) do
+    :ok = Specter.create_data_channel(specter, pc, "data")
+    ExUnit.Assertions.assert_receive({:data_channel_created, ^pc})
+    :ok
+  end
+
+  def create_offer(%{specter: specter, peer_connection: pc}) do
+    :ok = Specter.create_offer(specter, pc)
+    ExUnit.Assertions.assert_receive({:offer, ^pc, offer})
+    [offer: offer]
+  end
 
   @doc """
   Initialize Specter. Adds `%{specter: specter}` to the test
@@ -28,15 +41,7 @@ defmodule SpecterTest.NifHelpers do
 
   def init_peer_connection(%Specter{} = specter, api) do
     {:ok, pc} = Specter.new_peer_connection(specter, api)
-
-    :ok =
-      receive do
-        {:peer_connection_ready, ^pc} -> :ok
-      after
-        1000 ->
-          {:error, :timeout}
-      end
-
+    assert_receive {:peer_connection_ready, ^pc}
     true = Specter.peer_connection_exists?(specter, pc)
     pc
   end

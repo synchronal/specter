@@ -20,8 +20,11 @@ pub enum Msg {
     CreateDataChannel(String, String),
     CreateOffer(String, Option<RTCOfferOptions>),
     GetCurrentLocalDescription(String),
+    GetCurrentRemoteDescription(String),
     GetLocalDescription(String),
     GetPendingLocalDescription(String),
+    GetPendingRemoteDescription(String),
+    GetRemoteDescription(String),
     SetLocalDescription(String, RTCSessionDescription),
     SetRemoteDescription(String, RTCSessionDescription),
 }
@@ -228,6 +231,35 @@ fn get_current_local_description<'a>(
     (atoms::ok()).encode(env)
 }
 
+/// Note that this is nil until the peer connection has successfully negotiated its connection.
+#[rustler::nif(name = "current_remote_description")]
+fn get_current_remote_description<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx.send(Msg::GetCurrentRemoteDescription(uuid)).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
 /// Sends back either the current or pending session description.
 #[rustler::nif(name = "local_description")]
 fn get_local_description<'a>(
@@ -257,6 +289,35 @@ fn get_local_description<'a>(
     (atoms::ok()).encode(env)
 }
 
+/// Sends back either the current or pending session description.
+#[rustler::nif(name = "remote_description")]
+fn get_remote_description<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx.send(Msg::GetRemoteDescription(uuid)).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
 /// Note that this may be nil after ICE negotiates.
 #[rustler::nif(name = "pending_local_description")]
 fn get_pending_local_description<'a>(
@@ -278,6 +339,35 @@ fn get_pending_local_description<'a>(
 
     task::spawn(async move {
         match tx.send(Msg::GetPendingLocalDescription(uuid)).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
+/// Note that this may be nil after ICE negotiates.
+#[rustler::nif(name = "pending_remote_description")]
+fn get_pending_remote_description<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let uuid = pc_uuid.clone().decode().unwrap();
+
+    task::spawn(async move {
+        match tx.send(Msg::GetPendingRemoteDescription(uuid)).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -529,6 +619,63 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                             .encode(env),
                         Some(desc) => (
                             atoms::pending_local_description(),
+                            uuid,
+                            serde_json::to_string(&desc).unwrap(),
+                        )
+                            .encode(env),
+                    });
+                }
+                Some(Msg::GetCurrentRemoteDescription(uuid)) => {
+                    let lock = pc.clone();
+                    let resp = lock.current_remote_description().await;
+
+                    msg_env.send_and_clear(&pid, |env| match resp {
+                        None => (
+                            atoms::current_remote_description(),
+                            uuid,
+                            rustler::types::atom::nil(),
+                        )
+                            .encode(env),
+                        Some(desc) => (
+                            atoms::current_remote_description(),
+                            uuid,
+                            serde_json::to_string(&desc).unwrap(),
+                        )
+                            .encode(env),
+                    });
+                }
+                Some(Msg::GetRemoteDescription(uuid)) => {
+                    let lock = pc.clone();
+                    let resp = lock.remote_description().await;
+
+                    msg_env.send_and_clear(&pid, |env| match resp {
+                        None => (
+                            atoms::remote_description(),
+                            uuid,
+                            rustler::types::atom::nil(),
+                        )
+                            .encode(env),
+                        Some(desc) => (
+                            atoms::remote_description(),
+                            uuid,
+                            serde_json::to_string(&desc).unwrap(),
+                        )
+                            .encode(env),
+                    });
+                }
+                Some(Msg::GetPendingRemoteDescription(uuid)) => {
+                    let lock = pc.clone();
+                    let resp = lock.pending_remote_description().await;
+
+                    msg_env.send_and_clear(&pid, |env| match resp {
+                        None => (
+                            atoms::pending_remote_description(),
+                            uuid,
+                            rustler::types::atom::nil(),
+                        )
+                            .encode(env),
+                        Some(desc) => (
+                            atoms::pending_remote_description(),
                             uuid,
                             serde_json::to_string(&desc).unwrap(),
                         )

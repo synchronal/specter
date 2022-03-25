@@ -326,6 +326,30 @@ defmodule Specter do
     do: Native.current_local_description(ref, pc)
 
   @doc """
+  Sends back the value of the current remote session description on a peer connection. This will
+  send back JSON representing an offer or an answer when the peer connection has had
+  `set_remote_description/3` called and has successfully negotiated ICE. In all other cases,
+  `nil` will be sent.
+
+  See `current_remote_description/2` and `remote_description/2`.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init()
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc}
+      iex> Specter.current_remote_description(specter, pc)
+      :ok
+      iex> assert_receive {:current_remote_description, ^pc, nil}
+  """
+  @spec current_remote_description(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def current_remote_description(%Specter{native: ref}, pc),
+    do: Native.current_remote_description(ref, pc)
+
+  @doc """
   Sends back the value of the local session description on a peer connection. This will
   send back JSON representing an offer or an answer when the peer connection has had
   `set_local_description/3` called. If ICE has been successfully negotated, the current
@@ -541,6 +565,45 @@ defmodule Specter do
     do: Native.pending_local_description(ref, pc)
 
   @doc """
+  Sends back the value of the remote session description on a peer connection on a peer
+  that is pending connection, or nil.
+
+  See `current_remote_description/2` and `pending_remote_description/2`.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init()
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc_offer} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc_offer}
+      iex> :ok = Specter.create_data_channel(specter, pc_offer, "foo")
+      iex> :ok = Specter.create_offer(specter, pc_offer)
+      iex> assert_receive {:offer, ^pc_offer, offer}
+      ...>
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc_answer} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc_answer}
+      ...>
+      iex> Specter.pending_remote_description(specter, pc_answer)
+      :ok
+      iex> assert_receive {:pending_remote_description, ^pc_answer, nil}
+      ...>
+      iex> :ok = Specter.set_remote_description(specter, pc_answer, offer)
+      iex> assert_receive {:ok, ^pc_answer, :set_remote_description}
+      ...>
+      iex> Specter.pending_remote_description(specter, pc_answer)
+      :ok
+      iex> assert_receive {:pending_remote_description, ^pc_answer, ^offer}
+  """
+  @spec pending_remote_description(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def pending_remote_description(%Specter{native: ref}, pc),
+    do: Native.pending_remote_description(ref, pc)
+
+  @doc """
   Returns true or false, depending on whether the registry is available for
   consumption, i.e. is initialized and has not been used by a function that takes
   ownership of it.
@@ -567,6 +630,48 @@ defmodule Specter do
         raise "Unable to determine whether registry exists:\n#{inspect(error)}"
     end
   end
+
+  @doc """
+  Sends back the value of the remote session description on a peer connection. This will
+  send back JSON representing an offer or an answer when the peer connection has had
+  `set_remote_description/3` called. If ICE has been successfully negotated, the current
+  remote description will be sent back, otherwise the caller will receive the pending
+  remote description.
+
+  See `current_remote_description/2` and `remote_description/2`.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init()
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc_offer} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc_offer}
+      iex> :ok = Specter.create_data_channel(specter, pc_offer, "foo")
+      iex> :ok = Specter.create_offer(specter, pc_offer)
+      iex> assert_receive {:offer, ^pc_offer, offer}
+      ...>
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc_answer} = Specter.new_peer_connection(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc_answer}
+      ...>
+      iex> Specter.remote_description(specter, pc_answer)
+      :ok
+      iex> assert_receive {:remote_description, ^pc_answer, nil}
+      ...>
+      iex> :ok = Specter.set_remote_description(specter, pc_answer, offer)
+      iex> assert_receive {:ok, ^pc_answer, :set_remote_description}
+      ...>
+      iex> Specter.remote_description(specter, pc_answer)
+      :ok
+      iex> assert_receive {:remote_description, ^pc_answer, ^offer}
+  """
+  @spec remote_description(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def remote_description(%Specter{native: ref}, pc),
+    do: Native.remote_description(ref, pc)
 
   @doc """
   Given an offer or an answer session description, sets the local description on

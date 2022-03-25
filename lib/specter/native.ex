@@ -63,6 +63,13 @@ defmodule Specter.Native do
   def current_local_description(_ref, _pc), do: error()
 
   @doc """
+  Sends back the current remote session description. Will be nil until the peer connection successfully
+  negotiates ICE, even if an offer or answer has been set as the remote description.
+  """
+  @spec current_remote_description(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def current_remote_description(_ref, _pc), do: error()
+
+  @doc """
   Sends back the pending or current session description, depending on the state of the connection.
   """
   @spec local_description(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
@@ -129,11 +136,24 @@ defmodule Specter.Native do
   def pending_local_description(_ref, _pc), do: error()
 
   @doc """
+  Sends back the pending remote session description. May be nil after the peer connection successfully
+  negotiates its connection.
+  """
+  @spec pending_remote_description(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def pending_remote_description(_ref, _pc), do: error()
+
+  @doc """
   Checks whether the UUID representing a Registry points to an initialized
   Registry that has not been moved into a context owned by some other resource.
   """
   @spec registry_exists(t(), Specter.registry_t()) :: {:ok, boolean()} | {:error, term()}
   def registry_exists(_ref, _registry), do: error()
+
+  @doc """
+  Sends back the pending or current remote session description, depending on the state of the connection.
+  """
+  @spec remote_description(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def remote_description(_ref, _pc), do: error()
 
   @doc """
   Given a UUID representing an RTCPeerConnection and an offer or an answer from that same
