@@ -15,18 +15,18 @@ use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOp
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 pub enum Msg {
-    AddIceCandidate(String, RTCIceCandidateInit),
-    CreateAnswer(String, Option<RTCAnswerOptions>),
-    CreateDataChannel(String, String),
-    CreateOffer(String, Option<RTCOfferOptions>),
-    GetCurrentLocalDescription(String),
-    GetCurrentRemoteDescription(String),
-    GetLocalDescription(String),
-    GetPendingLocalDescription(String),
-    GetPendingRemoteDescription(String),
-    GetRemoteDescription(String),
-    SetLocalDescription(String, RTCSessionDescription),
-    SetRemoteDescription(String, RTCSessionDescription),
+    AddIceCandidate(RTCIceCandidateInit),
+    CreateAnswer(Option<RTCAnswerOptions>),
+    CreateDataChannel(String),
+    CreateOffer(Option<RTCOfferOptions>),
+    GetCurrentLocalDescription,
+    GetCurrentRemoteDescription,
+    GetLocalDescription,
+    GetPendingLocalDescription,
+    GetPendingRemoteDescription,
+    GetRemoteDescription,
+    SetLocalDescription(RTCSessionDescription),
+    SetRemoteDescription(RTCSessionDescription),
 }
 
 /// Create a new RTCPeerConnection.
@@ -89,10 +89,8 @@ fn add_ice_candidate<'a>(
         Ok(s) => s,
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::AddIceCandidate(uuid, ice_candidate)).await {
+        match tx.send(Msg::AddIceCandidate(ice_candidate)).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -122,10 +120,8 @@ fn create_answer<'a>(
         voice_activity_detection,
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::CreateAnswer(uuid, Some(answer_opts))).await {
+        match tx.send(Msg::CreateAnswer(Some(answer_opts))).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -153,10 +149,8 @@ fn create_data_channel<'a>(
         Some(tx) => tx.clone(),
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::CreateDataChannel(uuid, label)).await {
+        match tx.send(Msg::CreateDataChannel(label)).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -190,10 +184,8 @@ fn create_offer<'a>(
         voice_activity_detection,
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::CreateOffer(uuid, Some(offer_opts))).await {
+        match tx.send(Msg::CreateOffer(Some(offer_opts))).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -219,10 +211,8 @@ fn get_current_local_description<'a>(
         Some(tx) => tx.clone(),
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::GetCurrentLocalDescription(uuid)).await {
+        match tx.send(Msg::GetCurrentLocalDescription).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -248,10 +238,8 @@ fn get_current_remote_description<'a>(
         Some(tx) => tx.clone(),
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::GetCurrentRemoteDescription(uuid)).await {
+        match tx.send(Msg::GetCurrentRemoteDescription).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -277,10 +265,8 @@ fn get_local_description<'a>(
         Some(tx) => tx.clone(),
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::GetLocalDescription(uuid)).await {
+        match tx.send(Msg::GetLocalDescription).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -306,10 +292,8 @@ fn get_remote_description<'a>(
         Some(tx) => tx.clone(),
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::GetRemoteDescription(uuid)).await {
+        match tx.send(Msg::GetRemoteDescription).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -335,10 +319,8 @@ fn get_pending_local_description<'a>(
         Some(tx) => tx.clone(),
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::GetPendingLocalDescription(uuid)).await {
+        match tx.send(Msg::GetPendingLocalDescription).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -364,10 +346,8 @@ fn get_pending_remote_description<'a>(
         Some(tx) => tx.clone(),
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx.send(Msg::GetPendingRemoteDescription(uuid)).await {
+        match tx.send(Msg::GetPendingRemoteDescription).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -400,13 +380,8 @@ fn set_local_description<'a>(
         Ok(s) => s,
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
-        match tx
-            .send(Msg::SetLocalDescription(uuid, session_description))
-            .await
-        {
+        match tx.send(Msg::SetLocalDescription(session_description)).await {
             Ok(_) => (),
             Err(_err) => trace!("send error"),
         }
@@ -450,11 +425,9 @@ fn set_remote_description<'a>(
         Ok(s) => s,
     };
 
-    let uuid = pc_uuid.clone().decode().unwrap();
-
     task::spawn(async move {
         match tx
-            .send(Msg::SetRemoteDescription(uuid, session_description))
+            .send(Msg::SetRemoteDescription(session_description))
             .await
         {
             Ok(_) => (),
@@ -472,6 +445,9 @@ fn set_remote_description<'a>(
 fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: String) {
     task::spawn(async move {
         let mut msg_env = rustler::env::OwnedEnv::new();
+        // Convert String to static str, so that we know it exists for the duration of
+        // this thread. Manually dropped before this thread exits.
+        let pc_uuid: &'static str = Box::leak(uuid.clone().into_boxed_str());
 
         let (pc, pid) = {
             let state = resource.0.lock().unwrap();
@@ -482,7 +458,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
         let pc = match pc.await {
             Err(_) => {
                 msg_env.send_and_clear(&pid, |env| {
-                    (atoms::peer_connection_error(), &uuid).encode(env)
+                    (atoms::peer_connection_error(), &pc_uuid).encode(env)
                 });
                 return ();
             }
@@ -500,12 +476,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
             rx
         };
 
-        // This does something with extra threads... ownership of String is moved,
-        // but in a way where the compiler needs some lifetime clarity; cloning the
-        // data until a cleaner way can be figured out.
-        let pc_uuid = uuid.clone();
         pc.on_ice_candidate(Box::new(move |c: Option<RTCIceCandidate>| {
-            let uuid = pc_uuid.clone();
             Box::pin(async move {
                 let mut msg_env = rustler::env::OwnedEnv::new();
                 if let Some(c) = c {
@@ -514,7 +485,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
 
                     msg_env.send_and_clear(&pid, |env| {
                         // (atoms::ice_candidate(), &uuid, json).encode(env)
-                        (atoms::ice_candidate(), uuid, json).encode(env)
+                        (atoms::ice_candidate(), &pc_uuid, json).encode(env)
                     });
                 }
             })
@@ -526,182 +497,198 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
         // break out of the loop.
         loop {
             match rx.recv().await {
-                Some(Msg::AddIceCandidate(uuid, candidate)) => {
+                Some(Msg::AddIceCandidate(candidate)) => {
                     let lock = pc.clone();
                     let resp = lock.add_ice_candidate(candidate).await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (atoms::candidate_error(), uuid, err.to_string()).encode(env),
-                        Ok(()) => (atoms::ok(), uuid, atoms::add_ice_candidate()).encode(env),
+                        Err(err) => {
+                            (atoms::candidate_error(), &pc_uuid, err.to_string()).encode(env)
+                        }
+                        Ok(()) => (atoms::ok(), &pc_uuid, atoms::add_ice_candidate()).encode(env),
                     });
                 }
-                Some(Msg::CreateAnswer(uuid, opts)) => {
+                Some(Msg::CreateAnswer(opts)) => {
                     let lock = pc.clone();
                     let resp = lock.create_answer(opts).await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (atoms::answer_error(), uuid, err.to_string()).encode(env),
+                        Err(err) => (atoms::answer_error(), &pc_uuid, err.to_string()).encode(env),
                         Ok(answer) => (
                             atoms::answer(),
-                            uuid,
+                            &pc_uuid,
                             serde_json::to_string(&answer).unwrap(),
                         )
                             .encode(env),
                     });
                 }
-                Some(Msg::CreateDataChannel(uuid, label)) => {
+                Some(Msg::CreateDataChannel(label)) => {
                     let lock = pc.clone();
                     let resp = lock.create_data_channel(&label, None).await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (atoms::offer_error(), uuid, err.to_string()).encode(env),
-                        Ok(_data_channel) => (atoms::data_channel_created(), uuid).encode(env),
+                        Err(err) => (atoms::offer_error(), &pc_uuid, err.to_string()).encode(env),
+                        Ok(_data_channel) => (atoms::data_channel_created(), &pc_uuid).encode(env),
                     });
                 }
-                Some(Msg::CreateOffer(uuid, opts)) => {
+                Some(Msg::CreateOffer(opts)) => {
                     let lock = pc.clone();
                     let resp = lock.create_offer(opts).await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (atoms::offer_error(), uuid, err.to_string()).encode(env),
-                        Ok(offer) => (atoms::offer(), uuid, serde_json::to_string(&offer).unwrap())
+                        Err(err) => (atoms::offer_error(), &pc_uuid, err.to_string()).encode(env),
+                        Ok(offer) => (
+                            atoms::offer(),
+                            &pc_uuid,
+                            serde_json::to_string(&offer).unwrap(),
+                        )
                             .encode(env),
                     });
                 }
-                Some(Msg::GetCurrentLocalDescription(uuid)) => {
+                Some(Msg::GetCurrentLocalDescription) => {
                     let lock = pc.clone();
                     let resp = lock.current_local_description().await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::current_local_description(),
-                            uuid,
+                            &pc_uuid,
                             rustler::types::atom::nil(),
                         )
                             .encode(env),
                         Some(desc) => (
                             atoms::current_local_description(),
-                            uuid,
+                            &pc_uuid,
                             serde_json::to_string(&desc).unwrap(),
                         )
                             .encode(env),
                     });
                 }
-                Some(Msg::GetLocalDescription(uuid)) => {
+                Some(Msg::GetLocalDescription) => {
                     let lock = pc.clone();
                     let resp = lock.local_description().await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::local_description(),
-                            uuid,
+                            &pc_uuid,
                             rustler::types::atom::nil(),
                         )
                             .encode(env),
                         Some(desc) => (
                             atoms::local_description(),
-                            uuid,
+                            &pc_uuid,
                             serde_json::to_string(&desc).unwrap(),
                         )
                             .encode(env),
                     });
                 }
-                Some(Msg::GetPendingLocalDescription(uuid)) => {
+                Some(Msg::GetPendingLocalDescription) => {
                     let lock = pc.clone();
                     let resp = lock.pending_local_description().await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::pending_local_description(),
-                            uuid,
+                            &pc_uuid,
                             rustler::types::atom::nil(),
                         )
                             .encode(env),
                         Some(desc) => (
                             atoms::pending_local_description(),
-                            uuid,
+                            &pc_uuid,
                             serde_json::to_string(&desc).unwrap(),
                         )
                             .encode(env),
                     });
                 }
-                Some(Msg::GetCurrentRemoteDescription(uuid)) => {
+                Some(Msg::GetCurrentRemoteDescription) => {
                     let lock = pc.clone();
                     let resp = lock.current_remote_description().await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::current_remote_description(),
-                            uuid,
+                            &pc_uuid,
                             rustler::types::atom::nil(),
                         )
                             .encode(env),
                         Some(desc) => (
                             atoms::current_remote_description(),
-                            uuid,
+                            &pc_uuid,
                             serde_json::to_string(&desc).unwrap(),
                         )
                             .encode(env),
                     });
                 }
-                Some(Msg::GetRemoteDescription(uuid)) => {
+                Some(Msg::GetRemoteDescription) => {
                     let lock = pc.clone();
                     let resp = lock.remote_description().await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::remote_description(),
-                            uuid,
+                            &pc_uuid,
                             rustler::types::atom::nil(),
                         )
                             .encode(env),
                         Some(desc) => (
                             atoms::remote_description(),
-                            uuid,
+                            &pc_uuid,
                             serde_json::to_string(&desc).unwrap(),
                         )
                             .encode(env),
                     });
                 }
-                Some(Msg::GetPendingRemoteDescription(uuid)) => {
+                Some(Msg::GetPendingRemoteDescription) => {
                     let lock = pc.clone();
                     let resp = lock.pending_remote_description().await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
                         None => (
                             atoms::pending_remote_description(),
-                            uuid,
+                            &pc_uuid,
                             rustler::types::atom::nil(),
                         )
                             .encode(env),
                         Some(desc) => (
                             atoms::pending_remote_description(),
-                            uuid,
+                            &pc_uuid,
                             serde_json::to_string(&desc).unwrap(),
                         )
                             .encode(env),
                     });
                 }
-                Some(Msg::SetLocalDescription(uuid, session)) => {
+                Some(Msg::SetLocalDescription(session)) => {
                     let lock = pc.clone();
                     let resp = lock.set_local_description(session).await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => {
-                            (atoms::invalid_local_description(), uuid, err.to_string()).encode(env)
+                        Err(err) => (
+                            atoms::invalid_local_description(),
+                            &pc_uuid,
+                            err.to_string(),
+                        )
+                            .encode(env),
+                        Ok(_) => {
+                            (atoms::ok(), &pc_uuid, atoms::set_local_description()).encode(env)
                         }
-                        Ok(_) => (atoms::ok(), uuid, atoms::set_local_description()).encode(env),
                     });
                 }
-                Some(Msg::SetRemoteDescription(uuid, session)) => {
+                Some(Msg::SetRemoteDescription(session)) => {
                     let lock = pc.clone();
                     let resp = lock.set_remote_description(session).await;
 
                     msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => {
-                            (atoms::invalid_remote_description(), uuid, err.to_string()).encode(env)
+                        Err(err) => (
+                            atoms::invalid_remote_description(),
+                            &pc_uuid,
+                            err.to_string(),
+                        )
+                            .encode(env),
+                        Ok(_) => {
+                            (atoms::ok(), &pc_uuid, atoms::set_remote_description()).encode(env)
                         }
-                        Ok(_) => (atoms::ok(), uuid, atoms::set_remote_description()).encode(env),
                     });
                 }
                 None => break,
@@ -710,7 +697,9 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
 
         let state = resource.0.lock().unwrap();
         msg_env.send_and_clear(&state.pid, |env| {
-            (atoms::peer_connection_closed(), &uuid).encode(env)
+            (atoms::peer_connection_closed(), &pc_uuid).encode(env)
         });
+
+        drop(pc_uuid);
     });
 }
