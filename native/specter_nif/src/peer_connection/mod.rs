@@ -9,6 +9,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::channel;
 use webrtc::api::API;
 use webrtc::ice_transport::ice_candidate::{RTCIceCandidate, RTCIceCandidateInit};
+use webrtc::ice_transport::ice_connection_state::RTCIceConnectionState;
 // use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
@@ -27,6 +28,7 @@ pub enum Msg {
     GetRemoteDescription,
     SetLocalDescription(RTCSessionDescription),
     SetRemoteDescription(RTCSessionDescription),
+    IceConnectionState,
 }
 
 /// Create a new RTCPeerConnection.
@@ -438,6 +440,32 @@ fn set_remote_description<'a>(
     (atoms::ok()).encode(env)
 }
 
+#[rustler::nif]
+fn ice_connection_state<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    task::spawn(async move {
+        match tx.send(Msg::IceConnectionState).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
 //
 // PRIVATE
 //
@@ -690,6 +718,44 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                             (atoms::ok(), &pc_uuid, atoms::set_remote_description()).encode(env)
                         }
                     });
+                }
+                Some(Msg::IceConnectionState) => {
+                    let lock = pc.clone();
+                    let resp = lock.ice_connection_state();
+                    msg_env.send_and_clear(&pid, |env| match resp {
+                        RTCIceConnectionState::Unspecified => (
+                            atoms::ice_connection_state(),
+                            &pc_uuid,
+                            atoms::unspecified(),
+                        )
+                            .encode(env),
+                        RTCIceConnectionState::New => {
+                            (atoms::ice_connection_state(), &pc_uuid, atoms::new()).encode(env)
+                        }
+                        RTCIceConnectionState::Checking => {
+                            (atoms::ice_connection_state(), &pc_uuid, atoms::checking()).encode(env)
+                        }
+                        RTCIceConnectionState::Connected => {
+                            (atoms::ice_connection_state(), &pc_uuid, atoms::connected())
+                                .encode(env)
+                        }
+                        RTCIceConnectionState::Completed => {
+                            (atoms::ice_connection_state(), &pc_uuid, atoms::completed())
+                                .encode(env)
+                        }
+                        RTCIceConnectionState::Disconnected => (
+                            atoms::ice_connection_state(),
+                            &pc_uuid,
+                            atoms::disconnected(),
+                        )
+                            .encode(env),
+                        RTCIceConnectionState::Failed => {
+                            (atoms::ice_connection_state(), &pc_uuid, atoms::failed()).encode(env)
+                        }
+                        RTCIceConnectionState::Closed => {
+                            (atoms::ice_connection_state(), &pc_uuid, atoms::closed()).encode(env)
+                        }
+                    })
                 }
                 None => break,
             }

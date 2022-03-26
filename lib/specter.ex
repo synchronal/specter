@@ -180,6 +180,22 @@ defmodule Specter do
   @type session_description_t() :: String.t()
 
   @doc """
+  Possible states of ICE connection.
+  """
+  @type ice_connection_state_t() ::
+          :unspecified
+          | :new
+          | :checking
+          | :connected
+          | :completed
+          | :disconnected
+          | :failed
+          | :closed
+
+  @type ice_connection_state_msg_t() ::
+          {:ice_connection_state, peer_connection_t(), ice_connection_state_t()}
+
+  @doc """
   Initialize the library. This registers the calling process to receive
   callback messages to `handle_info/2`.
 
@@ -705,5 +721,14 @@ defmodule Specter do
           :ok | {:error, term()}
   def set_remote_description(%Specter{native: ref}, pc, description) do
     Native.set_remote_description(ref, pc, description)
+  end
+
+  @doc """
+  Sends back state of ICE connection for given peer connection.
+  This will send message `t:ice_connection_state_msg_t/0`
+  """
+  @spec ice_connection_state(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def ice_connection_state(%Specter{native: ref}, pc) do
+    Native.ice_connection_state(ref, pc)
   end
 end
