@@ -25,6 +25,7 @@ rustler::atoms! {
     current_remote_description,
     data_channel_created,
     ice_candidate,
+    ice_connection_state,
     local_description,
     peer_connection_closed,
     peer_connection_error,
@@ -37,15 +38,4 @@ rustler::atoms! {
 
     answer,
     offer,
-
-    // ice connection state
-    ice_connection_state,
-    unspecified,
-    new,
-    checking,
-    connected,
-    completed,
-    disconnected,
-    failed,
-    closed,
 }
