@@ -21,11 +21,13 @@ rustler::atoms! {
 
     // send
     add_ice_candidate,
+    connection_state,
     current_local_description,
     current_remote_description,
     data_channel_created,
     ice_candidate,
     ice_connection_state,
+    ice_gathering_state,
     local_description,
     peer_connection_closed,
     peer_connection_error,
@@ -33,6 +35,7 @@ rustler::atoms! {
     pending_local_description,
     pending_remote_description,
     remote_description,
+    signaling_state,
     set_local_description,
     set_remote_description,
 

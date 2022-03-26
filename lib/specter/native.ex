@@ -56,6 +56,12 @@ defmodule Specter.Native do
   def config(_ref), do: error()
 
   @doc """
+  Sends back state of peer connection.
+  """
+  @spec connection_state(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def connection_state(_ref, _pc), do: error()
+
+  @doc """
   Sends back the current session description. Will be nil until the peer connection successfully
   negotiates ICE, even if an offer or answer has been set as the local description.
   """
@@ -68,6 +74,18 @@ defmodule Specter.Native do
   """
   @spec current_remote_description(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
   def current_remote_description(_ref, _pc), do: error()
+
+  @doc """
+  Sends back state of ICE connection.
+  """
+  @spec ice_connection_state(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def ice_connection_state(_ref, _pc), do: error()
+
+  @doc """
+  Sends back state of ICE gathering process.
+  """
+  @spec ice_gathering_state(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def ice_gathering_state(_ref, _pc), do: error()
 
   @doc """
   Sends back the pending or current session description, depending on the state of the connection.
@@ -172,8 +190,11 @@ defmodule Specter.Native do
           :ok | {:error, term()}
   def set_remote_description(_ref, _pc, _desc), do: error()
 
-  @spec ice_connection_state(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
-  def ice_connection_state(_ref, _pc), do: error()
+  @doc """
+  Sends back state of sesion parameters negotiation.
+  """
+  @spec signaling_state(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def signaling_state(_ref, _pc), do: error()
 
   ##
   ## PRIVATE

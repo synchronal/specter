@@ -44,10 +44,10 @@ end
 - [x] `Specter.current_remote_description/2`
 - [x] `Specter.pending_remote_description/2`
 - [x] `Specter.remote_description/2`
-- [ ] `Specter.ice_connection_state/2`
-- [ ] `Specter.ice_gathering_state/2`
-- [ ] `Specter.signaling_state/2`
-- [ ] `Specter.connection_state/2`
+- [x] `Specter.ice_connection_state/2`
+- [x] `Specter.ice_gathering_state/2`
+- [x] `Specter.signaling_state/2`
+- [x] `Specter.connection_state/2`
 - [ ] `Specter.subscribe_to_state_changes` (ref, uuid)
   - state changes sent to Elixir pid
 - [ ] `pc.gathering_complete_promise` sends message to callback process
