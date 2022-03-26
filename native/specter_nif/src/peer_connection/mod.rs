@@ -9,11 +9,12 @@ use std::sync::Arc;
 use tokio::sync::mpsc::channel;
 use webrtc::api::API;
 use webrtc::ice_transport::ice_candidate::{RTCIceCandidate, RTCIceCandidateInit};
-use webrtc::ice_transport::ice_connection_state::RTCIceConnectionState;
 // use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
+
+mod peer_conn_state;
 
 pub enum Msg {
     AddIceCandidate(RTCIceCandidateInit),
@@ -722,39 +723,10 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                 Some(Msg::IceConnectionState) => {
                     let lock = pc.clone();
                     let resp = lock.ice_connection_state();
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        RTCIceConnectionState::Unspecified => (
-                            atoms::ice_connection_state(),
-                            &pc_uuid,
-                            atoms::unspecified(),
-                        )
-                            .encode(env),
-                        RTCIceConnectionState::New => {
-                            (atoms::ice_connection_state(), &pc_uuid, atoms::new()).encode(env)
-                        }
-                        RTCIceConnectionState::Checking => {
-                            (atoms::ice_connection_state(), &pc_uuid, atoms::checking()).encode(env)
-                        }
-                        RTCIceConnectionState::Connected => {
-                            (atoms::ice_connection_state(), &pc_uuid, atoms::connected())
-                                .encode(env)
-                        }
-                        RTCIceConnectionState::Completed => {
-                            (atoms::ice_connection_state(), &pc_uuid, atoms::completed())
-                                .encode(env)
-                        }
-                        RTCIceConnectionState::Disconnected => (
-                            atoms::ice_connection_state(),
-                            &pc_uuid,
-                            atoms::disconnected(),
-                        )
-                            .encode(env),
-                        RTCIceConnectionState::Failed => {
-                            (atoms::ice_connection_state(), &pc_uuid, atoms::failed()).encode(env)
-                        }
-                        RTCIceConnectionState::Closed => {
-                            (atoms::ice_connection_state(), &pc_uuid, atoms::closed()).encode(env)
-                        }
+                    let state = peer_conn_state::IceConnectionState::from(&resp);
+
+                    msg_env.send_and_clear(&pid, |env| {
+                        (atoms::ice_connection_state(), &pc_uuid, state).encode(env)
                     })
                 }
                 None => break,
