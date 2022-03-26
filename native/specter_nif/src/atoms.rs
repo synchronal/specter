@@ -37,4 +37,15 @@ rustler::atoms! {
 
     answer,
     offer,
+
+    // ice connection state
+    ice_connection_state,
+    unspecified,
+    new,
+    checking,
+    connected,
+    completed,
+    disconnected,
+    failed,
+    closed,
 }

@@ -590,4 +590,16 @@ defmodule SpecterTest do
       assert_receive {:ice_candidate, ^pc_answer, _candidate}
     end
   end
+
+  describe "ice_connection_state" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "returns `:new` just after creating peer connection", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.ice_connection_state(specter, peer_connection)
+      assert_receive {:ice_connection_state, ^peer_connection, :new}
+    end
+  end
 end

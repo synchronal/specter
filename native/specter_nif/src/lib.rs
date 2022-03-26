@@ -29,6 +29,7 @@ rustler::init!(
         peer_connection::new,
         peer_connection::set_local_description,
         peer_connection::set_remote_description,
+        peer_connection::ice_connection_state,
         state::get_config,
         state::init,
         state::media_engine_exists,

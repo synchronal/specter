@@ -172,6 +172,9 @@ defmodule Specter.Native do
           :ok | {:error, term()}
   def set_remote_description(_ref, _pc, _desc), do: error()
 
+  @spec ice_connection_state(t(), Specter.peer_connection_t()) :: :ok | {:error, term()}
+  def ice_connection_state(_ref, _pc), do: error()
+
   ##
   ## PRIVATE
   ##
