@@ -179,7 +179,7 @@ defmodule Specter do
   """
   @type session_description_t() :: String.t()
 
-  @doc """
+  @typedoc """
   Possible states of ICE connection.
   """
   @type ice_connection_state_t() ::
