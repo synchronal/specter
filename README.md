@@ -48,10 +48,13 @@ end
 - [x] `Specter.ice_gathering_state/2`
 - [x] `Specter.signaling_state/2`
 - [x] `Specter.connection_state/2`
-- [ ] `Specter.subscribe_to_state_changes` (ref, uuid)
-  - state changes sent to Elixir pid
+- [ ] pc state changes sent to Elixir pid
 - [ ] `pc.gathering_complete_promise` sends message to callback process
+  - might not want to impement this
 - [ ] `Specter.close`  (ref, uuid)
+- [ ] RTC metrics sent to Elixir
+- [ ] `Specter.add_track`  (ref, uuid, ?)
+- [ ] `Specter.remove_track`  (ref, uuid, ?)
 
 
 ## Development
