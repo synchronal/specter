@@ -30,6 +30,9 @@ pub enum Msg {
     SetLocalDescription(RTCSessionDescription),
     SetRemoteDescription(RTCSessionDescription),
     IceConnectionState,
+    IceGatheringState,
+    SignalingState,
+    ConnectionState,
 }
 
 /// Create a new RTCPeerConnection.
@@ -467,6 +470,76 @@ fn ice_connection_state<'a>(
     (atoms::ok()).encode(env)
 }
 
+#[rustler::nif]
+fn ice_gathering_state<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    task::spawn(async move {
+        match tx.send(Msg::IceGatheringState).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
+#[rustler::nif]
+fn signaling_state<'a>(env: Env<'a>, resource: ResourceArc<Ref>, pc_uuid: Term<'a>) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    task::spawn(async move {
+        match tx.send(Msg::SignalingState).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
+#[rustler::nif]
+fn connection_state<'a>(env: Env<'a>, resource: ResourceArc<Ref>, pc_uuid: Term<'a>) -> Term<'a> {
+    let state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    task::spawn(async move {
+        match tx.send(Msg::ConnectionState).await {
+            Ok(_) => (),
+            Err(_err) => trace!("send error"),
+        }
+    });
+
+    (atoms::ok()).encode(env)
+}
+
 //
 // PRIVATE
 //
@@ -724,10 +797,33 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                     let lock = pc.clone();
                     let resp = lock.ice_connection_state();
                     let state = peer_conn_state::IceConnectionState::from(&resp);
-
                     msg_env.send_and_clear(&pid, |env| {
                         (atoms::ice_connection_state(), &pc_uuid, state).encode(env)
-                    })
+                    });
+                }
+                Some(Msg::IceGatheringState) => {
+                    let lock = pc.clone();
+                    let resp = lock.ice_gathering_state();
+                    let state = peer_conn_state::IceGatheringState::from(&resp);
+                    msg_env.send_and_clear(&pid, |env| {
+                        (atoms::ice_gathering_state(), &pc_uuid, state).encode(env)
+                    });
+                }
+                Some(Msg::SignalingState) => {
+                    let lock = pc.clone();
+                    let resp = lock.signaling_state();
+                    let state = peer_conn_state::SignalingState::from(&resp);
+                    msg_env.send_and_clear(&pid, |env| {
+                        (atoms::signaling_state(), &pc_uuid, state).encode(env)
+                    });
+                }
+                Some(Msg::ConnectionState) => {
+                    let lock = pc.clone();
+                    let resp = lock.connection_state();
+                    let state = peer_conn_state::ConnectionState::from(&resp);
+                    msg_env.send_and_clear(&pid, |env| {
+                        (atoms::connection_state(), &pc_uuid, state).encode(env)
+                    });
                 }
                 None => break,
             }

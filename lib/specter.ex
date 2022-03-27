@@ -192,8 +192,50 @@ defmodule Specter do
           | :failed
           | :closed
 
+  @typedoc """
+  Message sent as a result of a call to `ice_connection_state/2`.
+  """
   @type ice_connection_state_msg_t() ::
           {:ice_connection_state, peer_connection_t(), ice_connection_state_t()}
+
+  @typedoc """
+  Possible states of ICE gathering process.
+  """
+  @type ice_gathering_state_t() :: :complete | :gathering | :new | :unspecified
+
+  @typedoc """
+  Message sent as a result of a call to `ice_gathering_state/2`.
+  """
+  @type ice_gathering_state_msg_t() ::
+          {:ice_gathering_state, peer_connection_t(), ice_connection_state_t()}
+
+  @typedoc """
+  Possible states of session parameters negotiation.
+  """
+  @type signaling_state_t() ::
+          :closed
+          | :have_local_offer
+          | :have_local_pranswer
+          | :have_remote_offer
+          | :have_remote_pranswer
+          | :stable
+          | :unspecified
+
+  @typedoc """
+  Message sent as a result of a call to `signaling_state/2`.
+  """
+  @type signaling_state_msg_t() :: {:signaling_state, peer_connection_t(), signaling_state_t()}
+
+  @typedoc """
+  Possible states of peer connection.
+  """
+  @type connection_state_t() ::
+          :closed | :connected | :connecting | :disconnected | :failed | :new | :unspecified
+
+  @typedoc """
+  Message sent as a result of a call to `connection_state/2`.
+  """
+  @type connection_state_msg_t() :: {:connection_state, peer_connection_t(), connection_state_t()}
 
   @doc """
   Initialize the library. This registers the calling process to receive
@@ -264,6 +306,15 @@ defmodule Specter do
   """
   @spec close_peer_connection(t(), peer_connection_t()) :: :ok | {:error, term()}
   def close_peer_connection(%Specter{native: ref}, pc), do: Native.close_peer_connection(ref, pc)
+
+  @doc """
+  Sends back state of peer connection.
+  This will send message `t:connection_state_msg_t/0`.
+  """
+  @spec connection_state(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def connection_state(%Specter{native: ref}, pc) do
+    Native.connection_state(ref, pc)
+  end
 
   @doc """
   Given an RTCPeerConnection where the remote description has been assigned via
@@ -364,6 +415,24 @@ defmodule Specter do
   @spec current_remote_description(t(), peer_connection_t()) :: :ok | {:error, term()}
   def current_remote_description(%Specter{native: ref}, pc),
     do: Native.current_remote_description(ref, pc)
+
+  @doc """
+  Sends back state of ICE connection for given peer connection.
+  This will send message `t:ice_connection_state_msg_t/0`
+  """
+  @spec ice_connection_state(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def ice_connection_state(%Specter{native: ref}, pc) do
+    Native.ice_connection_state(ref, pc)
+  end
+
+  @doc """
+  Sends back state of ICE gathering process.
+  This will send message `t:ice_gathering_state_t/0`.
+  """
+  @spec ice_gathering_state(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def ice_gathering_state(%Specter{native: ref}, pc) do
+    Native.ice_gathering_state(ref, pc)
+  end
 
   @doc """
   Sends back the value of the local session description on a peer connection. This will
@@ -724,11 +793,11 @@ defmodule Specter do
   end
 
   @doc """
-  Sends back state of ICE connection for given peer connection.
-  This will send message `t:ice_connection_state_msg_t/0`
+  Sends back state of session parameters negotiation.
+  This will send message `t:signaling_state_msg_t/0`.
   """
-  @spec ice_connection_state(t(), peer_connection_t()) :: :ok | {:error, term()}
-  def ice_connection_state(%Specter{native: ref}, pc) do
-    Native.ice_connection_state(ref, pc)
+  @spec signaling_state(t(), peer_connection_t()) :: :ok | {:error, term()}
+  def signaling_state(%Specter{native: ref}, pc) do
+    Native.signaling_state(ref, pc)
   end
 end

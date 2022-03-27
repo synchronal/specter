@@ -594,12 +594,48 @@ defmodule SpecterTest do
   describe "ice_connection_state" do
     setup [:initialize_specter, :init_api, :init_peer_connection]
 
-    test "returns `:new` just after creating peer connection", %{
+    test "sends `:new` just after creating a new peer connection back to elixir", %{
       specter: specter,
       peer_connection: peer_connection
     } do
       assert :ok = Specter.ice_connection_state(specter, peer_connection)
       assert_receive {:ice_connection_state, ^peer_connection, :new}
+    end
+  end
+
+  describe "ice_gathering_state" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "sends `:new` just after creating a new peer connection back to elixir", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.ice_gathering_state(specter, peer_connection)
+      assert_receive {:ice_gathering_state, ^peer_connection, :new}
+    end
+  end
+
+  describe "singaling_state" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "sends `:stable` just after creating a new peer connection back to elixir", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.signaling_state(specter, peer_connection)
+      assert_receive {:signaling_state, ^peer_connection, :stable}
+    end
+  end
+
+  describe "conncetion_state" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "sends `:new` just after creating a new peer connection back to elixir", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.connection_state(specter, peer_connection)
+      assert_receive {:connection_state, ^peer_connection, :new}
     end
   end
 end
