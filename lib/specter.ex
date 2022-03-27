@@ -664,6 +664,7 @@ defmodule Specter do
       iex> {:ok, pc_offer} = Specter.new_peer_connection(specter, api)
       iex> assert_receive {:peer_connection_ready, ^pc_offer}
       iex> :ok = Specter.create_data_channel(specter, pc_offer, "foo")
+      iex> assert_receive {:data_channel_created, ^pc_offer}
       iex> :ok = Specter.create_offer(specter, pc_offer)
       iex> assert_receive {:offer, ^pc_offer, offer}
       ...>
