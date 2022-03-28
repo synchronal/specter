@@ -53,8 +53,17 @@ end
   - might not want to impement this
 - [ ] `Specter.close`  (ref, uuid)
 - [ ] RTC metrics sent to Elixir
-- [ ] `Specter.add_track`  (ref, uuid, ?)
-- [ ] `Specter.remove_track`  (ref, uuid, ?)
+- [ ] `Specter.rtcp_feedback/2` (string, string), returning `Specter.RTCPFeedback.t()`
+- [ ] `Specter.codec_capability/5` (string, non_neg_integer, non_neg_integer, string, [rtcp_feedback]), returning `Specter.CodecCapability.t()`
+- [ ] `Specter.LocalTrack.RTP.new/4` (ref, codec, string, string)
+- [ ] `Specter.LocalTrack.RTP.codec/2` (ref, uuid)
+- [ ] `Specter.LocalTrack.RTP.write_rtp/3` (ref, uuid, packet)
+- [ ] `Specter.LocalTrack.RTP.write/3` (ref, uuid, binary)
+- [ ] `Specter.LocalTrack.Sample.new/4` (ref, codec, string, string)
+- [ ] `Specter.LocalTrack.Sample.codec/2` (ref, uuid)
+- [ ] `Specter.LocalTrack.Sample.write_sample/3` (ref, uuid, sample)
+- [ ] `Specter.add_track`  (ref, uuid, uuid)
+- [ ] `Specter.remove_track`  (ref, uuid, uuid)
 
 
 ## Development
