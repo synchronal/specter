@@ -1,5 +1,7 @@
 defmodule Specter.Native do
   @moduledoc false
+  # This module is private, but function docs are provided for developers reading
+  # the code.
   use Rustler, otp_app: :specter, crate: :specter_nif
 
   @opaque t() :: reference()
