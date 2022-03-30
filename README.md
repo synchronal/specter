@@ -27,27 +27,28 @@ end
 - [x] `Specter.new_api/3` (ref, uuid, uuid), returning UUID
   - arg1: media engine uuid
   - arg2: registry uuid
-- [x] `Specter.new_peer_connection/2` (ref, uuid), returning UUID
+- [x] `Specter.PeerConnection.new/2` (ref, uuid), returning UUID
   - arg1: api builder uuid
-- [x] `Specter.set_remote_description/3` (ref, uuid, json)
-- [x] `Specter.create_offer/3` (ref, uuid, opts)
+- [x] `Specter.PeerConnection.close/2` (ref, uuid)
+- [x] `Specter.PeerConnection.set_remote_description/3` (ref, uuid, json)
+- [x] `Specter.PeerConnection.create_offer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`, `ice_restart`: `bool`)
-- [x] `Specter.create_data_channel/3` (ref, uuid, label)
-- [x] `Specter.create_answer/3` (ref, uuid, opts)
+- [x] `Specter.PeerConnection.create_data_channel/3` (ref, uuid, label)
+- [x] `Specter.PeerConnection.create_answer/3` (ref, uuid, opts)
   - opts: (`voice_activity_detection`: `bool`)
-- [x] `Specter.set_local_description/3` (ref, uuid, json)
-- [x] `Specter.current_local_description/2`
-- [x] `Specter.pending_local_description/2`
-- [x] `Specter.local_description/2`
+- [x] `Specter.PeerConnection.set_local_description/3` (ref, uuid, json)
+- [x] `Specter.PeerConnection.current_local_description/2`
+- [x] `Specter.PeerConnection.pending_local_description/2`
+- [x] `Specter.PeerConnection.local_description/2`
 - [x] `pc.on_ice_candidate` sends candidate to callback process
-- [x] `Specter.add_ice_candidate/3` (ref, uuid, string)
-- [x] `Specter.current_remote_description/2`
-- [x] `Specter.pending_remote_description/2`
-- [x] `Specter.remote_description/2`
-- [x] `Specter.ice_connection_state/2`
-- [x] `Specter.ice_gathering_state/2`
-- [x] `Specter.signaling_state/2`
-- [x] `Specter.connection_state/2`
+- [x] `Specter.PeerConnection.add_ice_candidate/3` (ref, uuid, string)
+- [x] `Specter.PeerConnection.current_remote_description/2`
+- [x] `Specter.PeerConnection.pending_remote_description/2`
+- [x] `Specter.PeerConnection.remote_description/2`
+- [x] `Specter.PeerConnection.ice_connection_state/2`
+- [x] `Specter.PeerConnection.ice_gathering_state/2`
+- [x] `Specter.PeerConnection.signaling_state/2`
+- [x] `Specter.PeerConnection.connection_state/2`
 - [ ] pc state changes sent to Elixir pid
 - [ ] `pc.gathering_complete_promise` sends message to callback process
   - might not want to impement this
