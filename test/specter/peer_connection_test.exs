@@ -254,10 +254,21 @@ defmodule Specter.PeerConnectionTest do
 
     test "is true when the peer connection exists", %{specter: specter, api: api} do
       assert {:ok, pc} = Specter.PeerConnection.new(specter, api)
-      refute Specter.PeerConnection.exists?(specter, pc)
       assert_receive {:peer_connection_ready, ^pc}
 
       assert Specter.PeerConnection.exists?(specter, pc)
+    end
+
+    test "is false after a peer connection closes", %{specter: specter, api: api} do
+      assert {:ok, pc} = Specter.PeerConnection.new(specter, api)
+      assert_receive {:peer_connection_ready, ^pc}
+
+      assert Specter.PeerConnection.exists?(specter, pc)
+
+      assert :ok = Specter.PeerConnection.close(specter, pc)
+      assert_receive {:peer_connection_closed, ^pc}
+
+      refute Specter.PeerConnection.exists?(specter, pc)
     end
   end
 
