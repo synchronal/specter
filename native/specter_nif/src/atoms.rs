@@ -35,6 +35,7 @@ rustler::atoms! {
     pending_local_description,
     pending_remote_description,
     remote_description,
+    rtp_sender,
     signaling_state,
     set_local_description,
     set_remote_description,

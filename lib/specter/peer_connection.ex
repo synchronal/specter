@@ -111,6 +111,11 @@ defmodule Specter.PeerConnection do
   """
   @type connection_state_msg_t() :: {:connection_state, t(), connection_state_t()}
 
+  @typedoc """
+  Message sent as a result of a call to `add_track/3`.
+  """
+  @type rtp_sender_t() :: {:rtp_sender, t(), Specter.TrackLocalStaticSample.t(), String.t()}
+
   @doc """
   Creates a new RTCPeerConnection, using an API reference created with `new_api/3`. The
   functionality wrapped by this function is async, so `:ok` is returned immediately.
@@ -520,5 +525,16 @@ defmodule Specter.PeerConnection do
   @spec signaling_state(Specter.t(), t()) :: :ok | {:error, term()}
   def signaling_state(%Specter{native: ref}, pc) do
     Native.signaling_state(ref, pc)
+  end
+
+  @doc """
+  Adds track to peer connection.
+
+  Sends back uuid of newly created rtp sender.
+  This will send message `t:rtp_sender_msg_t/0`
+  """
+  @spec add_track(Specter.t(), t(), Specter.TrackLocalStaticSample.t()) :: :ok | {:error | term()}
+  def add_track(%Specter{native: ref}, pc, track) do
+    Native.add_track(ref, pc, track)
   end
 end

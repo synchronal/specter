@@ -1,4 +1,5 @@
 use crate::atoms;
+use crate::codec_capability::RtpCodecCapability;
 use crate::config::Config;
 use crate::peer_connection;
 use crate::util::gen_uuid;
@@ -11,6 +12,8 @@ use webrtc::api::interceptor_registry as interceptor;
 use webrtc::api::media_engine::MediaEngine;
 use webrtc::api::{APIBuilder, API};
 use webrtc::interceptor::registry::Registry;
+use webrtc::rtp_transceiver::rtp_codec::RTCRtpCodecCapability;
+use webrtc::track::track_local::track_local_static_sample::TrackLocalStaticSample;
 
 // The resource which will be wrapped in an ResourceArc and returned to
 // Elixir as a reference.
@@ -24,6 +27,7 @@ pub struct State {
     media_engines: HashMap<String, MediaEngine>,
     peer_connections: HashMap<String, Sender<peer_connection::Msg>>,
     registries: HashMap<String, Registry>,
+    local_static_sample_tracks: HashMap<String, TrackLocalStaticSample>,
 }
 
 impl State {
@@ -35,6 +39,7 @@ impl State {
             media_engines: HashMap::new(),
             peer_connections: HashMap::new(),
             registries: HashMap::new(),
+            local_static_sample_tracks: HashMap::new(),
         }
     }
 
@@ -116,6 +121,23 @@ impl State {
     pub(crate) fn remove_registry<'a>(&mut self, uuid: Term<'a>) -> Option<Registry> {
         let id: &String = &uuid.clone().decode().unwrap();
         self.registries.remove(id)
+    }
+
+    //***** Track
+    pub(crate) fn add_track_local_static_sample(
+        &mut self,
+        uuid: &String,
+        track: TrackLocalStaticSample,
+    ) -> &mut State {
+        self.local_static_sample_tracks.insert(uuid.clone(), track);
+        self
+    }
+
+    pub(crate) fn get_track_local_static_sample(
+        &mut self,
+        uuid: &String,
+    ) -> TrackLocalStaticSample {
+        self.local_static_sample_tracks.remove(uuid).unwrap()
     }
 }
 
@@ -241,6 +263,29 @@ fn new_api<'a>(
     let api_id = gen_uuid();
     state.add_api(&api_id, api);
     Ok(api_id)
+}
+
+#[rustler::nif]
+fn new_track_local_static_sample<'a>(
+    resource: ResourceArc<Ref>,
+    codec: Term<'a>,
+    id: Term<'a>,
+    stream_id: Term<'a>,
+) -> Result<String, Atom> {
+    let mut state = match resource.0.lock() {
+        Err(_) => return Err(atoms::lock_fail()),
+        Ok(guard) => guard,
+    };
+
+    let codec: RtpCodecCapability = codec.decode().unwrap();
+    let track = TrackLocalStaticSample::new(
+        RTCRtpCodecCapability::from(codec),
+        id.decode().unwrap(),
+        stream_id.decode().unwrap(),
+    );
+    let track_id = gen_uuid();
+    state.add_track_local_static_sample(&track_id, track);
+    Ok(track_id)
 }
 
 /// Returns true or false depending on whether the State hashmap owns a MediaEngine

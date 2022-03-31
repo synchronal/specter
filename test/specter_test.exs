@@ -118,4 +118,31 @@ defmodule SpecterTest do
       assert Specter.registry_exists?(specter, registry)
     end
   end
+
+  describe "new_track_local_static_sample" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "creates new track properly and returns its uuid", %{specter: specter} do
+      codec = %Specter.RtpCodecCapability{mime_type: "audio"}
+
+      assert {:ok, track_uuid} =
+               Specter.TrackLocalStaticSample.new(specter, codec, "audio", "specter")
+
+      assert is_binary(track_uuid)
+    end
+
+    test "adds new track properly and returns uuid of newly created rtp sender", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      codec = %Specter.RtpCodecCapability{mime_type: "audio"}
+
+      assert {:ok, track_uuid} =
+               Specter.TrackLocalStaticSample.new(specter, codec, "audio", "specter")
+
+      assert :ok = Specter.PeerConnection.add_track(specter, peer_connection, track_uuid)
+      assert_receive {:rtp_sender, ^peer_connection, ^track_uuid, rtp_sender_uuid}
+      assert is_binary(rtp_sender_uuid)
+    end
+  end
 end
