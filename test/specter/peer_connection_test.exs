@@ -59,32 +59,6 @@ defmodule Specter.PeerConnectionTest do
     end
   end
 
-  describe "add_track" do
-    setup [:initialize_specter, :init_api, :init_peer_connection]
-
-    test "adds new track properly and sends back reference of newly created rtp sender", %{
-      specter: specter,
-      peer_connection: peer_connection
-    } do
-      codec = %Specter.RtpCodecCapability{mime_type: "audio"}
-
-      assert {:ok, track_uuid} =
-               Specter.TrackLocalStaticSample.new(specter, codec, "audio", "specter")
-
-      assert :ok = Specter.PeerConnection.add_track(specter, peer_connection, track_uuid)
-      assert_receive {:rtp_sender, ^peer_connection, ^track_uuid, rtp_sender_uuid}
-      assert is_binary(rtp_sender_uuid)
-    end
-
-    test "returns error when trying to add invalid track", %{
-      specter: specter,
-      peer_connection: peer_connection
-    } do
-      assert {:error, :invalid_track} =
-               Specter.PeerConnection.add_track(specter, peer_connection, "invalid_track")
-    end
-  end
-
   describe "close" do
     setup [:initialize_specter, :init_api]
 

@@ -228,6 +228,8 @@ defmodule Specter.PeerConnection do
       iex> {:ok, track} = Specter.TrackLocalStaticSample.new(specter, codec, "audio", "specter")
       iex> :ok = Specter.PeerConnection.add_track(specter, pc, track)
       iex> assert_receive {:rtp_sender, ^pc, ^track, _rtp_sender}
+      ...>
+      iex> {:error, :invalid_track} = Specter.PeerConnection.add_track(specter, pc, "invalid_track")
   """
   @spec add_track(Specter.t(), t(), Specter.TrackLocalStaticSample.t()) :: :ok | {:error | term()}
   def add_track(%Specter{native: ref}, pc, track) do
