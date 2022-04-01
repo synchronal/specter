@@ -136,8 +136,8 @@ impl State {
     pub(crate) fn get_track_local_static_sample(
         &mut self,
         uuid: &String,
-    ) -> TrackLocalStaticSample {
-        self.local_static_sample_tracks.remove(uuid).unwrap()
+    ) -> Option<TrackLocalStaticSample> {
+        self.local_static_sample_tracks.remove(uuid)
     }
 }
 

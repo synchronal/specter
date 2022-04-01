@@ -127,17 +127,21 @@ fn add_track<'a>(
     };
 
     let decoded_track_uuid = track_uuid.decode().unwrap();
-    let track = state.get_track_local_static_sample(&decoded_track_uuid);
 
-    task::spawn(async move {
-        match tx
-            .send(Msg::AddTrack(decoded_track_uuid, Arc::new(track)))
-            .await
-        {
-            Ok(_) => (),
-            Err(_err) => trace!("send error"),
+    match state.get_track_local_static_sample(&decoded_track_uuid) {
+        None => return (atoms::error(), atoms::invalid_track()).encode(env),
+        Some(track) => {
+            task::spawn(async move {
+                match tx
+                    .send(Msg::AddTrack(decoded_track_uuid, Arc::new(track)))
+                    .await
+                {
+                    Ok(_) => (),
+                    Err(_err) => trace!("send error"),
+                }
+            });
         }
-    });
+    }
 
     (atoms::ok()).encode(env)
 }

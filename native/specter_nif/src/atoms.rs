@@ -9,6 +9,7 @@ rustler::atoms! {
     invalid_json,
     invalid_local_description,
     invalid_remote_description,
+    invalid_track,
     lock_fail,
     not_found,
     offer_error,

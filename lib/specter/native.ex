@@ -28,7 +28,7 @@ defmodule Specter.Native do
   @doc """
   Adds track to peer connection.
 
-  Sends back newly created rtp sender uuid.
+  Sends back newly created rtp sender UUID.
   """
   @spec add_track(t(), peer_conn_t(), Specter.TrackLocalStaticSample.t()) ::
           :ok | {:error, term()}
