@@ -1,6 +1,27 @@
 defmodule Specter.TrackLocalStaticSample do
   @moduledoc """
-  A representation of webrtc.rs TrackLocalStaticSample.
+  A representation of webrtc.rs `TrackLocalStaticSample`.
+
+  In general, a track in WebRTC represents a single audio or video
+  and its main purpose is to provide user with API for 
+  sending and receiving media data/packets.
+
+  Therefore, webrtc.rs has multiple implementations of the track depending on
+  what user want to do.
+
+  Local tracks are outbound tracks i.e. they are used when user wants to 
+  send media to the other end of a peer conneciton.
+  User must instanitate local track explicilty.
+  At the moment, there are two types of local track: `TrackLocalStaticSample`
+  and `TrackLocalStaticRtp`.
+  The former is used when user wants RTP encapsulation to be performed under the hood.
+  The latter, when user has already prepared RTP packets.
+
+  Remote tracks are inbound tracks i.e. they represent incoming media.
+  User does not create remote track explicitly.
+  Instead, it announces willingness to receive track by creating a rtp transceiver
+  and then, when there are some remote packets, webrtc.rs creates a new 
+  remote track internally and notifies user.
   """
   alias Specter.Native
 
