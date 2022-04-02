@@ -1,6 +1,7 @@
 use rustler::{Env, Term};
 
 mod atoms;
+mod codec_capability;
 mod config;
 mod peer_connection;
 mod state;
@@ -16,6 +17,7 @@ rustler::init!(
     "Elixir.Specter.Native",
     [
         peer_connection::add_ice_candidate,
+        peer_connection::add_track,
         peer_connection::close,
         peer_connection::connection_state,
         peer_connection::create_answer,
@@ -39,6 +41,7 @@ rustler::init!(
         state::new_api,
         state::new_media_engine,
         state::new_registry,
+        state::new_track_local_static_sample,
         state::peer_connection_exists,
         state::registry_exists,
     ],

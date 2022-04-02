@@ -5,10 +5,13 @@ use crate::util::gen_uuid;
 use log::trace;
 use rustler::{Atom, Encoder, Env, ResourceArc, Term};
 use serde_json;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc::channel;
 use webrtc::api::API;
 use webrtc::ice_transport::ice_candidate::{RTCIceCandidate, RTCIceCandidateInit};
+use webrtc::rtp_transceiver::rtp_sender::RTCRtpSender;
+use webrtc::track::track_local::TrackLocal;
 // use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::offer_answer_options::{RTCAnswerOptions, RTCOfferOptions};
@@ -18,6 +21,7 @@ mod peer_conn_state;
 
 pub enum Msg {
     AddIceCandidate(RTCIceCandidateInit),
+    AddTrack(String, Arc<dyn TrackLocal + Send + Sync>),
     CreateAnswer(Option<RTCAnswerOptions>),
     CreateDataChannel(String),
     CreateOffer(Option<RTCOfferOptions>),
@@ -101,6 +105,43 @@ fn add_ice_candidate<'a>(
             Err(_err) => trace!("send error"),
         }
     });
+
+    (atoms::ok()).encode(env)
+}
+
+#[rustler::nif]
+fn add_track<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    pc_uuid: Term<'a>,
+    track_uuid: Term<'a>,
+) -> Term<'a> {
+    let mut state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let tx = match state.get_peer_connection(pc_uuid) {
+        None => return (atoms::error(), atoms::not_found()).encode(env),
+        Some(tx) => tx.clone(),
+    };
+
+    let decoded_track_uuid = track_uuid.decode().unwrap();
+
+    match state.get_track_local_static_sample(&decoded_track_uuid) {
+        None => return (atoms::error(), atoms::invalid_track()).encode(env),
+        Some(track) => {
+            task::spawn(async move {
+                match tx
+                    .send(Msg::AddTrack(decoded_track_uuid, Arc::new(track)))
+                    .await
+                {
+                    Ok(_) => (),
+                    Err(_err) => trace!("send error"),
+                }
+            });
+        }
+    }
 
     (atoms::ok()).encode(env)
 }
@@ -594,6 +635,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
         }))
         .await;
 
+        let mut rtp_senders: HashMap<String, Arc<RTCRtpSender>> = HashMap::new();
         // Block on messages being received on the channel for this peer connection.
         // When all senders go out of scope, the receiver will receive `None` and
         // break out of the loop.
@@ -609,6 +651,16 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                         }
                         Ok(()) => (atoms::ok(), &pc_uuid, atoms::add_ice_candidate()).encode(env),
                     });
+                }
+                Some(Msg::AddTrack(track_uuid, track)) => {
+                    let lock = pc.clone();
+                    let sender = lock.add_track(track).await.unwrap();
+                    let sender_uuid = gen_uuid();
+
+                    rtp_senders.insert(sender_uuid.clone(), sender);
+                    msg_env.send_and_clear(&pid, |env| {
+                        (atoms::rtp_sender(), &pc_uuid, &track_uuid, sender_uuid).encode(env)
+                    })
                 }
                 Some(Msg::CreateAnswer(opts)) => {
                     let lock = pc.clone();

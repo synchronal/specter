@@ -26,6 +26,15 @@ defmodule Specter.Native do
   def add_ice_candidate(_ref, _pc, _candidate), do: error()
 
   @doc """
+  Adds track to peer connection.
+
+  Sends back newly created rtp sender UUID.
+  """
+  @spec add_track(t(), peer_conn_t(), Specter.TrackLocalStaticSample.t()) ::
+          :ok | {:error, term()}
+  def add_track(_ref, _pc, _track), do: error()
+
+  @doc """
   Closes an RTCPeerConnection represented by the given UUID.
   """
   @spec close_peer_connection(t(), peer_conn_t()) :: :ok | {:error, term()}
@@ -140,6 +149,15 @@ defmodule Specter.Native do
   @spec new_api(t(), Specter.media_engine_t(), Specter.registry_t()) ::
           {:ok, Specter.api_t()} | {:error, term()}
   def new_api(_ref, _media_engine, _registry), do: error()
+
+  @doc """
+  Creates new TrackLocalStaticSample.
+
+  - https://github.com/webrtc-rs/webrtc/blob/master/src/track/track_local/track_local_static_sample.rs
+  """
+  @spec new_track_local_static_sample(t(), Specter.RtpCodecCapability.t(), String.t(), String.t()) ::
+          {:ok, Specter.TrackLocalStaticSample.t()} | {:error, term()}
+  def new_track_local_static_sample(_ref, _codec, _id, _stream_id), do: error()
 
   @doc """
   Checks whether the UUID representing an RTCPeerConnection points to an initialized

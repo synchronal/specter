@@ -111,6 +111,11 @@ defmodule Specter.PeerConnection do
   """
   @type connection_state_msg_t() :: {:connection_state, t(), connection_state_t()}
 
+  @typedoc """
+  Message sent as a result of a call to `add_track/3`.
+  """
+  @type rtp_sender_t() :: {:rtp_sender, t(), Specter.TrackLocalStaticSample.t(), String.t()}
+
   @doc """
   Creates a new RTCPeerConnection, using an API reference created with `new_api/3`. The
   functionality wrapped by this function is async, so `:ok` is returned immediately.
@@ -151,7 +156,7 @@ defmodule Specter.PeerConnection do
       iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
       iex> {:ok, pc} = Specter.PeerConnection.new(specter, api)
       iex> assert_receive {:peer_connection_ready, ^pc}
-      iex> Specter.PeerConnection.exists??(specter, pc)
+      iex> Specter.PeerConnection.exists?(specter, pc)
       true
 
       iex> {:ok, specter} = Specter.init(ice_servers: ["stun:stun.l.google.com:19302"])
@@ -204,6 +209,32 @@ defmodule Specter.PeerConnection do
   @spec add_ice_candidate(Specter.t(), t(), ice_candidate_t()) :: :ok | {:error, term()}
   def add_ice_candidate(%Specter{native: ref}, pc, candidate),
     do: Native.add_ice_candidate(ref, pc, candidate)
+
+  @doc """
+  Adds track to peer connection.
+
+  Sends back uuid of newly created rtp sender.
+  This will send message `t:rtp_sender_msg_t/0`.
+
+  ## Usage
+
+      iex> {:ok, specter} = Specter.init()
+      iex> {:ok, media_engine} = Specter.new_media_engine(specter)
+      iex> {:ok, registry} = Specter.new_registry(specter, media_engine)
+      iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
+      iex> {:ok, pc} = Specter.PeerConnection.new(specter, api)
+      iex> assert_receive {:peer_connection_ready, ^pc}
+      iex> codec = %Specter.RtpCodecCapability{mime_type: "audio"}
+      iex> {:ok, track} = Specter.TrackLocalStaticSample.new(specter, codec, "audio", "specter")
+      iex> :ok = Specter.PeerConnection.add_track(specter, pc, track)
+      iex> assert_receive {:rtp_sender, ^pc, ^track, _rtp_sender}
+      ...>
+      iex> {:error, :invalid_track} = Specter.PeerConnection.add_track(specter, pc, "invalid_track")
+  """
+  @spec add_track(Specter.t(), t(), Specter.TrackLocalStaticSample.t()) :: :ok | {:error | term()}
+  def add_track(%Specter{native: ref}, pc, track) do
+    Native.add_track(ref, pc, track)
+  end
 
   @doc """
   Sends back state of peer connection.
@@ -350,7 +381,7 @@ defmodule Specter.PeerConnection do
       iex> {:ok, pc} = Specter.PeerConnection.new(specter, api)
       iex> assert_receive {:peer_connection_ready, ^pc}
       ...>
-      iex> Specter.local_description(specter, pc)
+      iex> Specter.PeerConnection.local_description(specter, pc)
       :ok
       iex> assert_receive {:local_description, ^pc, nil}
       ...>
@@ -380,16 +411,16 @@ defmodule Specter.PeerConnection do
       iex> {:ok, pc} = Specter.PeerConnection.new(specter, api)
       iex> assert_receive {:peer_connection_ready, ^pc}
       ...>
-      iex> Specter.pending_local_description(specter, pc)
+      iex> Specter.PeerConnection.pending_local_description(specter, pc)
       :ok
       iex> assert_receive {:pending_local_description, ^pc, nil}
       ...>
-      iex> :ok = Specter.create_offer(specter, pc)
+      iex> :ok = Specter.PeerConnection.create_offer(specter, pc)
       iex> assert_receive {:offer, ^pc, offer}
-      iex> :ok = Specter.set_local_description(specter, pc, offer)
+      iex> :ok = Specter.PeerConnection.set_local_description(specter, pc, offer)
       iex> assert_receive {:ok, ^pc, :set_local_description}
       ...>
-      iex> Specter.pending_local_description(specter, pc)
+      iex> Specter.PeerConnection.pending_local_description(specter, pc)
       :ok
       iex> assert_receive {:pending_local_description, ^pc, ^offer}
   """
@@ -411,9 +442,9 @@ defmodule Specter.PeerConnection do
       iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
       iex> {:ok, pc_offer} = Specter.PeerConnection.new(specter, api)
       iex> assert_receive {:peer_connection_ready, ^pc_offer}
-      iex> :ok = Specter.create_data_channel(specter, pc_offer, "foo")
+      iex> :ok = Specter.PeerConnection.create_data_channel(specter, pc_offer, "foo")
       iex> assert_receive {:data_channel_created, ^pc_offer}
-      iex> :ok = Specter.create_offer(specter, pc_offer)
+      iex> :ok = Specter.PeerConnection.create_offer(specter, pc_offer)
       iex> assert_receive {:offer, ^pc_offer, offer}
       ...>
       iex> {:ok, media_engine} = Specter.new_media_engine(specter)
@@ -422,14 +453,14 @@ defmodule Specter.PeerConnection do
       iex> {:ok, pc_answer} = Specter.PeerConnection.new(specter, api)
       iex> assert_receive {:peer_connection_ready, ^pc_answer}
       ...>
-      iex> Specter.pending_remote_description(specter, pc_answer)
+      iex> Specter.PeerConnection.pending_remote_description(specter, pc_answer)
       :ok
       iex> assert_receive {:pending_remote_description, ^pc_answer, nil}
       ...>
-      iex> :ok = Specter.set_remote_description(specter, pc_answer, offer)
+      iex> :ok = Specter.PeerConnection.set_remote_description(specter, pc_answer, offer)
       iex> assert_receive {:ok, ^pc_answer, :set_remote_description}
       ...>
-      iex> Specter.pending_remote_description(specter, pc_answer)
+      iex> Specter.PeerConnection.pending_remote_description(specter, pc_answer)
       :ok
       iex> assert_receive {:pending_remote_description, ^pc_answer, ^offer}
   """
@@ -454,9 +485,9 @@ defmodule Specter.PeerConnection do
       iex> {:ok, api} = Specter.new_api(specter, media_engine, registry)
       iex> {:ok, pc_offer} = Specter.PeerConnection.new(specter, api)
       iex> assert_receive {:peer_connection_ready, ^pc_offer}
-      iex> :ok = Specter.create_data_channel(specter, pc_offer, "foo")
+      iex> :ok = Specter.PeerConnection.create_data_channel(specter, pc_offer, "foo")
       iex> assert_receive {:data_channel_created, ^pc_offer}
-      iex> :ok = Specter.create_offer(specter, pc_offer)
+      iex> :ok = Specter.PeerConnection.create_offer(specter, pc_offer)
       iex> assert_receive {:offer, ^pc_offer, offer}
       ...>
       iex> {:ok, media_engine} = Specter.new_media_engine(specter)
@@ -465,14 +496,14 @@ defmodule Specter.PeerConnection do
       iex> {:ok, pc_answer} = Specter.PeerConnection.new(specter, api)
       iex> assert_receive {:peer_connection_ready, ^pc_answer}
       ...>
-      iex> Specter.remote_description(specter, pc_answer)
+      iex> Specter.PeerConnection.remote_description(specter, pc_answer)
       :ok
       iex> assert_receive {:remote_description, ^pc_answer, nil}
       ...>
-      iex> :ok = Specter.set_remote_description(specter, pc_answer, offer)
+      iex> :ok = Specter.PeerConnection.set_remote_description(specter, pc_answer, offer)
       iex> assert_receive {:ok, ^pc_answer, :set_remote_description}
       ...>
-      iex> Specter.remote_description(specter, pc_answer)
+      iex> Specter.PeerConnection.remote_description(specter, pc_answer)
       :ok
       iex> assert_receive {:remote_description, ^pc_answer, ^offer}
   """
