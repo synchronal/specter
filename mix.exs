@@ -4,7 +4,8 @@ defmodule Specter.MixProject do
   @scm_url "https://github.com/livinginthepast/specter"
   @version "0.2.1"
 
-  def project do [
+  def project do
+    [
       app: :specter,
       deps: deps(),
       description: description(),
@@ -74,11 +75,9 @@ defmodule Specter.MixProject do
   defp doc_extras() do
     [
       "README.md",
-
       "guides/lifecycle.md",
-
       "internal_docs/architecture.md",
-      "internal_docs/README.md": [filename: "internal_readme", title: "README"],
+      "internal_docs/README.md": [filename: "internal_readme", title: "README"]
     ]
   end
 
