@@ -10,8 +10,8 @@ defmodule Specter.TrackLocalStaticSample do
   what user want to do.
 
   Local tracks are outbound tracks i.e. they are used when user wants to 
-  send media to the other end of a peer conneciton.
-  User must instanitate local track explicilty.
+  send media to the other end of a peer connection.
+  User must instantiate local track explicitly.
   At the moment, there are two types of local track: `TrackLocalStaticSample`
   and `TrackLocalStaticRtp`.
   The former is used when user wants RTP encapsulation to be performed under the hood.
