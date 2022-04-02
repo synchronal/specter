@@ -10,11 +10,7 @@ defmodule Specter.MixProject do
       deps: deps(),
       description: description(),
       dialyzer: dialyzer(),
-      docs: [
-        extras: doc_extras(),
-        source_ref: "v#{@version}",
-        main: "readme"
-      ],
+      docs: docs(),
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       homepage_url: @scm_url,
@@ -57,13 +53,6 @@ defmodule Specter.MixProject do
     ]
   end
 
-  defp doc_extras() do
-    [
-      "guides/lifecycle.md",
-      "README.md"
-    ]
-  end
-
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
@@ -71,6 +60,32 @@ defmodule Specter.MixProject do
     Path.join([:code.root_dir(), "releases", :erlang.system_info(:otp_release), "OTP_VERSION"])
     |> File.read!()
     |> String.trim()
+  end
+
+  defp docs() do
+    [
+      main: "readme",
+      extras: doc_extras(),
+      groups_for_extras: groups_for_extras(),
+      source_ref: "v#{@version}",
+      assets: "internal_docs/assets"
+    ]
+  end
+
+  defp doc_extras() do
+    [
+      "README.md",
+      "guides/lifecycle.md",
+      "internal_docs/architecture.md",
+      "internal_docs/README.md": [filename: "internal_readme", title: "README"]
+    ]
+  end
+
+  defp groups_for_extras() do
+    [
+      {"Guides", ~r/guides\//},
+      {"Internal docs", ~r/internal_docs\//}
+    ]
   end
 
   defp package do
