@@ -19,11 +19,14 @@ pub fn play_from_file<'a>(
         Ok(guard) => guard,
     };
 
+    let decoded_track_uuid: String = track_uuid.decode().unwrap();
     let track = state
-        .get_track_local_static_sample(&track_uuid.decode().unwrap())
+        .get_track_local_static_sample(&decoded_track_uuid)
         .unwrap()
         .clone();
 
+    let pid = state.pid.clone();
+    let mut msg_env = rustler::env::OwnedEnv::new();
     let decoded_path: String = path.decode().unwrap();
 
     task::spawn(async move {
@@ -43,18 +46,12 @@ pub fn play_from_file<'a>(
                 Ok(nal) => nal,
                 Err(err) => {
                     println!("All video frames parsed and sent: {:?}", err);
+                    msg_env.send_and_clear(&pid, |env| {
+                        (atoms::play_finished(), &decoded_track_uuid).encode(env)
+                    });
                     break;
                 }
             };
-
-            /*println!(
-                "PictureOrderCount={}, ForbiddenZeroBit={}, RefIdc={}, UnitType={}, data={}",
-                nal.picture_order_count,
-                nal.forbidden_zero_bit,
-                nal.ref_idc,
-                nal.unit_type,
-                nal.data.len()
-            );*/
 
             track
                 .write_sample(&Sample {
