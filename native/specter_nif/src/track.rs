@@ -1,0 +1,72 @@
+use crate::state::Ref;
+use crate::{atoms, task};
+use rustler::{Encoder, Env, ResourceArc, Term};
+use std::fs::File;
+use std::io::BufReader;
+use tokio::time::Duration;
+use webrtc::media::io::h264_reader::H264Reader;
+use webrtc::media::Sample;
+
+#[rustler::nif]
+pub fn play_from_file<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<Ref>,
+    track_uuid: Term<'a>,
+    path: Term<'a>,
+) -> Term<'a> {
+    let mut state = match resource.0.lock() {
+        Err(_) => return (atoms::error(), atoms::lock_fail()).encode(env),
+        Ok(guard) => guard,
+    };
+
+    let track = state
+        .get_track_local_static_sample(&track_uuid.decode().unwrap())
+        .unwrap()
+        .clone();
+
+    let decoded_path: String = path.decode().unwrap();
+
+    task::spawn(async move {
+        // Open a H264 file and start reading using our H264Reader
+        let file = File::open(&decoded_path).unwrap();
+        let reader = BufReader::new(file);
+        let mut h264 = H264Reader::new(reader);
+
+        println!("play video from disk file {}", decoded_path);
+
+        // It is important to use a time.Ticker instead of time.Sleep because
+        // * avoids accumulating skew, just calling time.Sleep didn't compensate for the time spent parsing the data
+        // * works around latency issues with Sleep
+        let mut ticker = tokio::time::interval(Duration::from_millis(33));
+        loop {
+            let nal = match h264.next_nal() {
+                Ok(nal) => nal,
+                Err(err) => {
+                    println!("All video frames parsed and sent: {:?}", err);
+                    break;
+                }
+            };
+
+            /*println!(
+                "PictureOrderCount={}, ForbiddenZeroBit={}, RefIdc={}, UnitType={}, data={}",
+                nal.picture_order_count,
+                nal.forbidden_zero_bit,
+                nal.ref_idc,
+                nal.unit_type,
+                nal.data.len()
+            );*/
+
+            track
+                .write_sample(&Sample {
+                    data: nal.data.freeze(),
+                    duration: Duration::from_secs(1),
+                    ..Default::default()
+                })
+                .await
+                .unwrap();
+
+            let _ = ticker.tick().await;
+        }
+    });
+    atoms::ok().encode(env)
+}

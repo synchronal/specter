@@ -44,4 +44,13 @@ defmodule Specter.TrackLocalStaticSample do
   def new(%Specter{native: ref}, codec, id, stream_id) do
     Native.new_track_local_static_sample(ref, codec, id, stream_id)
   end
+
+  @spec play_from_file(Specter.t(), t(), Path.t()) :: :ok | {:error | term()}
+  def play_from_file(%Specter{native: ref}, track, path) do
+    if File.exists?(path) do
+      Native.play_from_file(ref, track, path)
+    else
+      {:error, :file_not_found}
+    end
+  end
 end

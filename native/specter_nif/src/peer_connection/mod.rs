@@ -131,9 +131,10 @@ fn add_track<'a>(
     match state.get_track_local_static_sample(&decoded_track_uuid) {
         None => return (atoms::error(), atoms::invalid_track()).encode(env),
         Some(track) => {
+            let track_arc_clone = track.clone();
             task::spawn(async move {
                 match tx
-                    .send(Msg::AddTrack(decoded_track_uuid, Arc::new(track)))
+                    .send(Msg::AddTrack(decoded_track_uuid, track_arc_clone))
                     .await
                 {
                     Ok(_) => (),

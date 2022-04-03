@@ -181,6 +181,10 @@ defmodule Specter.Native do
   @spec pending_remote_description(t(), peer_conn_t()) :: :ok | {:error, term()}
   def pending_remote_description(_ref, _pc), do: error()
 
+  @spec play_from_file(t(), Specter.TrackLocalStaticSample.t(), Path.t()) ::
+          :ok | {:error, term()}
+  def play_from_file(_ref, _track, _path), do: error()
+
   @doc """
   Checks whether the UUID representing a Registry points to an initialized
   Registry that has not been moved into a context owned by some other resource.

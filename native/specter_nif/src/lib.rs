@@ -6,6 +6,7 @@ mod config;
 mod peer_connection;
 mod state;
 mod task;
+mod track;
 mod util;
 
 fn on_load(env: Env, _info: Term) -> bool {
@@ -44,6 +45,7 @@ rustler::init!(
         state::new_track_local_static_sample,
         state::peer_connection_exists,
         state::registry_exists,
+        track::play_from_file,
     ],
     load = on_load
 );
