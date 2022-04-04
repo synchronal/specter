@@ -8,7 +8,7 @@ This example sends H264 encoded video to a web browser.
 2. Copy browser SDP offer to file `offer.txt`. 
 **Important** make sure you have copied whole SDP offer, sometimes 
 there might be some `=` characters at the end which might not be selected
-byt double-click.
+by double-clicking.
 3. Run `run.exs` from the project root directory with:
 
     ```
