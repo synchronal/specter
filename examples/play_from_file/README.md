@@ -20,7 +20,7 @@ byt double-click.
 
 **Important**
 You have to copy SDP answer and start session quickly enough, before
-peer connection timeouts (about 30s).
+the peer connection times outs (about 30s).
 
 ## Result
 As a result you should see a small video (320x180) playing in your browser 
