@@ -29,13 +29,15 @@ pub fn play_from_file<'a>(
     let mut msg_env = rustler::env::OwnedEnv::new();
     let decoded_path: String = path.decode().unwrap();
 
+    // this code is taken from webrtc.rs
+    // https://github.com/webrtc-rs/examples/blob/5a0e2861c66a45fca93aadf9e70a5b045b26dc9e/examples/play-from-disk-h264/play-from-disk-h264.rs#L171
     task::spawn(async move {
         // Open a H264 file and start reading using our H264Reader
         let file = File::open(&decoded_path).unwrap();
         let reader = BufReader::new(file);
         let mut h264 = H264Reader::new(reader);
 
-        println!("play video from disk file {}", decoded_path);
+        log::debug!("Play video from file {}", decoded_path);
 
         // It is important to use a time.Ticker instead of time.Sleep because
         // * avoids accumulating skew, just calling time.Sleep didn't compensate for the time spent parsing the data
@@ -45,9 +47,9 @@ pub fn play_from_file<'a>(
             let nal = match h264.next_nal() {
                 Ok(nal) => nal,
                 Err(err) => {
-                    println!("All video frames parsed and sent: {:?}", err);
+                    log::debug!("All video frames parsed and sent: {:?}", err);
                     msg_env.send_and_clear(&pid, |env| {
-                        (atoms::play_finished(), &decoded_track_uuid).encode(env)
+                        (atoms::playback_finished(), &decoded_track_uuid).encode(env)
                     });
                     break;
                 }

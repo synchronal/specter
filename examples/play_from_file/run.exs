@@ -77,7 +77,7 @@ defmodule Stopwatch do
 
   def wait_for_playback_finished(track) do
     receive do
-      {:play_finished, ^track} -> :ok
+      {:playback_finished, ^track} -> :ok
     end
   end
 end
