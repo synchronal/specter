@@ -12,7 +12,7 @@ by double-clicking.
 3. Run `run.exs` from the project root directory with:
 
     ```
-    mix run examples/play_from_file/run.exs (cat examples/play_from_file/offer.txt)
+    mix run examples/play_from_file_h264/run.exs (cat examples/play_from_file_h264/offer.txt)
     ```
 
 4. Copy SDP answer to the browser.

@@ -8,7 +8,7 @@ use webrtc::media::io::h264_reader::H264Reader;
 use webrtc::media::Sample;
 
 #[rustler::nif]
-pub fn play_from_file<'a>(
+pub fn play_from_file_h264<'a>(
     env: Env<'a>,
     resource: ResourceArc<Ref>,
     track_uuid: Term<'a>,

@@ -49,7 +49,7 @@ rustler::init!(
         state::new_track_local_static_sample,
         state::peer_connection_exists,
         state::registry_exists,
-        track::play_from_file,
+        track::play_from_file_h264,
     ],
     load = on_load
 );
