@@ -37,7 +37,7 @@ pub fn play_from_file_h264<'a>(
         let reader = BufReader::new(file);
         let mut h264 = H264Reader::new(reader);
 
-        log::debug!("Play video from file {}", decoded_path);
+        log::debug!("Play video from file {}\r", decoded_path);
 
         // It is important to use a time.Ticker instead of time.Sleep because
         // * avoids accumulating skew, just calling time.Sleep didn't compensate for the time spent parsing the data
@@ -47,7 +47,7 @@ pub fn play_from_file_h264<'a>(
             let nal = match h264.next_nal() {
                 Ok(nal) => nal,
                 Err(err) => {
-                    log::debug!("All video frames parsed and sent: {:?}", err);
+                    log::debug!("All video frames parsed and sent: {:?}\r", err);
                     msg_env.send_and_clear(&pid, |env| {
                         (atoms::playback_finished(), &decoded_track_uuid).encode(env)
                     });

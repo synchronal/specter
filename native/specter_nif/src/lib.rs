@@ -11,8 +11,8 @@ mod util;
 
 fn on_load(env: Env, _info: Term) -> bool {
     match env_logger::try_init() {
-        Ok(()) => log::debug!("Logger initialized succsessfully"),
-        Err(_reason) => log::debug!("Logger already initialized. Ignoring."),
+        Ok(()) => log::debug!("Logger initialized succsessfully\r"),
+        Err(_reason) => log::debug!("Logger already initialized. Ignoring.\r"),
     };
     state::load(env);
     true
