@@ -2,7 +2,7 @@ defmodule Specter.MixProject do
   use Mix.Project
 
   @scm_url "https://github.com/livinginthepast/specter"
-  @version "0.2.1"
+  @version "0.3.0"
 
   def project do
     [
