@@ -83,7 +83,7 @@ end
 offer =
   case System.argv() do
     [offer] ->
-      Base.decode64!(offer)
+      Base.decode64!(String.trim(offer))
 
     _other ->
       IO.puts("""
