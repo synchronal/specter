@@ -27,7 +27,7 @@ pub struct State {
     media_engines: HashMap<String, MediaEngine>,
     peer_connections: HashMap<String, Sender<peer_connection::Msg>>,
     registries: HashMap<String, Registry>,
-    local_static_sample_tracks: HashMap<String, TrackLocalStaticSample>,
+    local_static_sample_tracks: HashMap<String, Arc<TrackLocalStaticSample>>,
 }
 
 impl State {
@@ -127,7 +127,7 @@ impl State {
     pub(crate) fn add_track_local_static_sample(
         &mut self,
         uuid: &String,
-        track: TrackLocalStaticSample,
+        track: Arc<TrackLocalStaticSample>,
     ) -> &mut State {
         self.local_static_sample_tracks.insert(uuid.clone(), track);
         self
@@ -136,8 +136,8 @@ impl State {
     pub(crate) fn get_track_local_static_sample(
         &mut self,
         uuid: &String,
-    ) -> Option<TrackLocalStaticSample> {
-        self.local_static_sample_tracks.remove(uuid)
+    ) -> Option<&Arc<TrackLocalStaticSample>> {
+        self.local_static_sample_tracks.get(uuid)
     }
 }
 
@@ -284,7 +284,7 @@ fn new_track_local_static_sample<'a>(
         stream_id.decode().unwrap(),
     );
     let track_id = gen_uuid();
-    state.add_track_local_static_sample(&track_id, track);
+    state.add_track_local_static_sample(&track_id, Arc::new(track));
     Ok(track_id)
 }
 

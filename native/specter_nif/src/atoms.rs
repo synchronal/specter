@@ -35,6 +35,7 @@ rustler::atoms! {
     peer_connection_ready,
     pending_local_description,
     pending_remote_description,
+    playback_finished,
     remote_description,
     rtp_sender,
     signaling_state,

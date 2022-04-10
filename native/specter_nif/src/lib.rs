@@ -6,9 +6,14 @@ mod config;
 mod peer_connection;
 mod state;
 mod task;
+mod track;
 mod util;
 
 fn on_load(env: Env, _info: Term) -> bool {
+    match env_logger::try_init() {
+        Ok(()) => log::debug!("Logger initialized succsessfully\r"),
+        Err(_reason) => log::debug!("Logger already initialized. Ignoring.\r"),
+    };
     state::load(env);
     true
 }
@@ -44,6 +49,7 @@ rustler::init!(
         state::new_track_local_static_sample,
         state::peer_connection_exists,
         state::registry_exists,
+        track::play_from_file_h264,
     ],
     load = on_load
 );
