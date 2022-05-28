@@ -8,6 +8,9 @@ on:
   pull_request:
     branches:
       - main
+env:
+  ELIXIR_VERSION: "1.13.4"
+  OTP_VERSION: "25.0"
 jobs:
   build:
     name: Build
@@ -19,8 +22,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.13.4"
-          otp-version: "24.3.3"
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
       - name: Cache deps
         uses: actions/cache@v2
         with:
@@ -56,8 +59,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.13.4"
-          otp-version: "24.3.3"
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
       - name: Cache deps
         uses: actions/cache@v2
         with:
@@ -96,8 +99,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.13.4"
-          otp-version: "24.3.3"
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
       - name: Cache deps
         uses: actions/cache@v2
         with:
@@ -145,8 +148,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.13.4"
-          otp-version: "24.3.3"
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
       - name: Cache deps
         uses: actions/cache@v2
         with:
