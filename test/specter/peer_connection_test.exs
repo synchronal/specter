@@ -75,6 +75,18 @@ defmodule Specter.PeerConnectionTest do
     end
   end
 
+  describe "connection_state" do
+    setup [:initialize_specter, :init_api, :init_peer_connection]
+
+    test "sends `:new` just after creating a new peer connection back to elixir", %{
+      specter: specter,
+      peer_connection: peer_connection
+    } do
+      assert :ok = Specter.PeerConnection.connection_state(specter, peer_connection)
+      assert_receive {:connection_state, ^peer_connection, :new}
+    end
+  end
+
   describe "create_answer" do
     setup [:initialize_specter, :init_api, :init_peer_connection]
 
@@ -512,7 +524,7 @@ defmodule Specter.PeerConnectionTest do
     end
   end
 
-  describe "singaling_state" do
+  describe "signaling_state" do
     setup [:initialize_specter, :init_api, :init_peer_connection]
 
     test "sends `:stable` just after creating a new peer connection back to elixir", %{
@@ -521,18 +533,6 @@ defmodule Specter.PeerConnectionTest do
     } do
       assert :ok = Specter.PeerConnection.signaling_state(specter, peer_connection)
       assert_receive {:signaling_state, ^peer_connection, :stable}
-    end
-  end
-
-  describe "conncetion_state" do
-    setup [:initialize_specter, :init_api, :init_peer_connection]
-
-    test "sends `:new` just after creating a new peer connection back to elixir", %{
-      specter: specter,
-      peer_connection: peer_connection
-    } do
-      assert :ok = Specter.PeerConnection.connection_state(specter, peer_connection)
-      assert_receive {:connection_state, ^peer_connection, :new}
     end
   end
 end
