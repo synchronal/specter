@@ -94,7 +94,7 @@ defmodule SpecterTest.NifHelpers do
   end
 
   def wait_for_peer_connection_connected(specter, pc) do
-    Moar.Retry.rescue_for!(5_000, fn ->
+    Moar.Retry.rescue_for!(10_000, fn ->
       :ok = Specter.PeerConnection.connection_state(specter, pc)
       assert_receive {:connection_state, ^pc, :connected}
     end)
