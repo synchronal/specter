@@ -12,7 +12,7 @@ entities provided by Rust, with a minimal set of opinions.
 ```elixir
 def deps do
   [
-    {:specter, "~> 0.1.0"}
+    {:specter, "~> 0.1"}
   ]
 end
 ```
