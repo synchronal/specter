@@ -34,8 +34,9 @@ defmodule Specter.MixProject do
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.28", only: [:dev], runtime: false},
       {:jason, "~> 1.3"},
-      {:moar, "~> 1.7", only: [:test]},
+      {:markdown_formatter, "~> 0.5", only: :dev, runtime: false},
       {:mix_audit, "~> 1.0", only: [:dev], runtime: false},
+      {:moar, "~> 1.7", only: [:test]},
       {:rustler, "~> 0.23"},
       {:uuid, "~> 1.1", only: [:test]}
     ]
@@ -69,7 +70,7 @@ defmodule Specter.MixProject do
       extras: doc_extras(),
       groups_for_extras: groups_for_extras(),
       source_ref: "v#{@version}",
-      assets: "internal_docs/assets"
+      assets: "guides/assets"
     ]
   end
 
@@ -77,15 +78,15 @@ defmodule Specter.MixProject do
     [
       "README.md",
       "guides/lifecycle.md",
-      "internal_docs/architecture.md",
-      "internal_docs/README.md": [filename: "internal_readme", title: "README"]
+      "guides/internal_docs/README.md": [filename: "internal_readme", title: "README"],
+      "guides/internal_docs/architecture.md": []
     ]
   end
 
   defp groups_for_extras() do
     [
-      {"Guides", ~r/guides\//},
-      {"Internal docs", ~r/internal_docs\//}
+      {"Guides", Path.wildcard("guides/*.md")},
+      {"Internal docs", Path.wildcard("guides/internal_docs/*.md")}
     ]
   end
 

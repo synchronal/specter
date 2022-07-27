@@ -1,11 +1,9 @@
 # Specter
 
-`Specter` is a wrapper for [webrtc.rs](https://webrtc.rs) as an Elixir NIF, using
-Rustler.
+`Specter` is a wrapper for [webrtc.rs](https://webrtc.rs) as an Elixir NIF, using Rustler.
 
-This library is a low-level interface to the data structures and
-entities provided by Rust, with a minimal set of opinions.
-
+This library is a low-level interface to the data structures and entities provided by Rust, with a
+minimal set of opinions.
 
 ## Installation
 
@@ -53,16 +51,15 @@ end
 - [ ] pc state changes sent to Elixir pid
 - [ ] `pc.gathering_complete_promise` sends message to callback process
   - might not want to impement this
-- [ ] `Specter.close`  (ref, uuid)
+- [ ] `Specter.close` (ref, uuid)
 - [ ] RTC metrics sent to Elixir
-- [ ] `Specter.add_track`  (ref, uuid, ?)
-- [ ] `Specter.remove_track`  (ref, uuid, ?)
-
+- [ ] `Specter.add_track` (ref, uuid, ?)
+- [ ] `Specter.remove_track` (ref, uuid, ?)
 
 ## Development
 
-Development of `Specter` depends on Elixir, Erlang, and Rust being available
-in the environment. Suggested setup:
+Development of `Specter` depends on Elixir, Erlang, and Rust being available in the environment.
+Suggested setup:
 
 ```shell
 asdf plugin-add erlang
@@ -72,8 +69,8 @@ asdf plugin-add rust
 bin/dev/doctor
 ```
 
-CI will run tests and audit the repository, but to make sure all checks locally,
-the following commands can be run:
+CI will run tests and audit the repository, but to make sure all checks locally, the following
+commands can be run:
 
 ```shell
 bin/dev/audit
@@ -86,11 +83,9 @@ The following script is encouraged to run all checks as a part of pushing commit
 bin/dev/shipit
 ```
 
-
 ## References / Thank yous
 
 This project is indebted to the following sites and references (at the very least).
 
 - https://github.com/scrogson/franz
 - https://webrtc.rs
-
