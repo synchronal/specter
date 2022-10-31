@@ -35,7 +35,7 @@ defmodule Specter.MixProject do
       {:ex_doc, "~> 0.28", only: [:dev], runtime: false},
       {:jason, "~> 1.3"},
       {:markdown_formatter, "~> 0.5", only: :dev, runtime: false},
-      {:mix_audit, "~> 1.0", only: [:dev], runtime: false},
+      {:mix_audit, "~> 2.0", only: [:dev], runtime: false},
       {:moar, "~> 1.7", only: [:test]},
       {:rustler, "~> 0.23"},
       {:uuid, "~> 1.1", only: [:test]}

@@ -9,8 +9,8 @@ on:
     branches:
       - main
 env:
-  ELIXIR_VERSION: "1.14"
-  OTP_VERSION: "25.0.3"
+  ELIXIR_VERSION: "1.14.1"
+  OTP_VERSION: "25.1.2"
 jobs:
   build_test:
     name: Build Test
@@ -18,19 +18,20 @@ jobs:
     env:
       MIX_ENV: test
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: deps
           key: ${{ runner.os }}-test-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -38,7 +39,7 @@ jobs:
             native/specter_nif/target
           key: ${{ runner.os }}-test-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache _build
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: _build
           key: ${{ runner.os }}-test-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -54,19 +55,20 @@ jobs:
     env:
       MIX_ENV: dev
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: deps
           key: ${{ runner.os }}-dev-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -74,7 +76,7 @@ jobs:
             native/specter_nif/target
           key: ${{ runner.os }}-dev-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache _build
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: _build
           key: ${{ runner.os }}-dev-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -91,19 +93,20 @@ jobs:
     env:
       MIX_ENV: test
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: deps
           key: ${{ runner.os }}-test-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -111,7 +114,7 @@ jobs:
             native/specter_nif/target
           key: ${{ runner.os }}-test-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache _build
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: _build
           key: ${{ runner.os }}-test-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -125,19 +128,20 @@ jobs:
     env:
       MIX_ENV: test
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: deps
           key: ${{ runner.os }}-test-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -145,12 +149,12 @@ jobs:
             native/specter_nif/target
           key: ${{ runner.os }}-test-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache _build
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: _build
           key: ${{ runner.os }}-test-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache PLTs
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: priv/plts
           key: ${{ runner.os }}-test-dialyxir-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -167,19 +171,20 @@ jobs:
     env:
       MIX_ENV: dev
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: deps
           key: ${{ runner.os }}-dev-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -187,7 +192,7 @@ jobs:
             native/specter_nif/target
           key: ${{ runner.os }}-dev-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache _build
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: _build
           key: ${{ runner.os }}-dev-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -209,19 +214,20 @@ jobs:
       - audit
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: deps
           key: ${{ runner.os }}-dev-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -229,12 +235,12 @@ jobs:
             native/specter_nif/target
           key: ${{ runner.os }}-dev-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache _build
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: _build
           key: ${{ runner.os }}-dev-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Publish to Hex
-        uses: synchronal/hex-publish-action@v1
+        uses: synchronal/hex-publish-action@v3
         with:
           name: specter
           key: ${{ secrets.HEX_PM_KEY }}
