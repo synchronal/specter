@@ -647,7 +647,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
             Box::pin(async move {
                 let mut msg_env = rustler::env::OwnedEnv::new();
                 if let Some(c) = c {
-                    let candidate = c.to_json().await.unwrap();
+                    let candidate = c.to_json().unwrap();
                     let json = serde_json::to_string(&candidate).unwrap();
 
                     msg_env.send_and_clear(&pid, |env| {
@@ -656,8 +656,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                     });
                 }
             })
-        }))
-        .await;
+        }));
 
         let mut rtp_senders: HashMap<String, Arc<RTCRtpSender>> = HashMap::new();
         // Block on messages being received on the channel for this peer connection.
