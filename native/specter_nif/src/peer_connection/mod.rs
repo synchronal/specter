@@ -613,7 +613,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
         let mut msg_env = rustler::env::OwnedEnv::new();
         // Convert String to static str, so that we know it exists for the duration of
         // this thread. Manually dropped before this thread exits.
-        let pc_uuid: &'static str = Box::leak(uuid.clone().into_boxed_str());
+        let pc_uuid: &str = Box::leak(uuid.clone().into_boxed_str());
 
         let (pc, pid) = {
             let state = resource.0.lock().unwrap();
@@ -920,7 +920,5 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
         msg_env.send_and_clear(&state.pid, |env| {
             (atoms::peer_connection_closed(), &pc_uuid).encode(env)
         });
-
-        drop(pc_uuid);
     });
 }
