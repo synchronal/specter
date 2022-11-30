@@ -7,6 +7,7 @@ trap "exit" INT
 source ".medic/_support/doctor.sh"
 
 check "Check formatting" "bin/dev/format --check" "bin/dev/format --all"
+check "Check rust formatting" "(cd native/specter_nif && cargo fmt --check)" "(cd native/specter_nif && cargo fmt)"
 step "Auditing Elixir deps" "mix deps.audit"
 step "Credo" "mix credo --strict"
 step "Dialyzer" "mix dialyzer"

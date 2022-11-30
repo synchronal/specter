@@ -46,7 +46,7 @@ impl From<Config> for RTCConfiguration {
     fn from(config: Config) -> Self {
         RTCConfiguration {
             ice_servers: vec![RTCIceServer {
-                urls: config.ice_servers.clone(),
+                urls: config.ice_servers,
                 ..Default::default()
             }],
             ..Default::default()

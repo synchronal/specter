@@ -4,7 +4,6 @@ use crate::task;
 use crate::util::gen_uuid;
 use log::trace;
 use rustler::{Atom, Encoder, Env, ResourceArc, Term};
-use serde_json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc::channel;
@@ -46,7 +45,7 @@ pub enum Msg {
 /// - Once this is initialized, how does it run in a thread that doesn't conflict
 ///   with the Erlang scheduler?
 #[rustler::nif(name = "new_peer_connection")]
-fn new<'a>(resource: ResourceArc<Ref>, api_uuid: Term<'a>) -> Result<String, Atom> {
+fn new(resource: ResourceArc<Ref>, api_uuid: Term) -> Result<String, Atom> {
     let api = {
         let state_ref = resource.0.lock().unwrap();
         match state_ref.get_api(api_uuid) {
@@ -619,7 +618,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
         let (pc, pid) = {
             let state = resource.0.lock().unwrap();
             let rtc_config = RTCConfiguration::from(&state.config.clone());
-            (api.new_peer_connection(rtc_config), state.pid.clone())
+            (api.new_peer_connection(rtc_config), state.pid)
         };
 
         let pc = match pc.await {
@@ -627,7 +626,7 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                 msg_env.send_and_clear(&pid, |env| {
                     (atoms::peer_connection_error(), &pc_uuid).encode(env)
                 });
-                return ();
+                return;
             }
             Ok(pc) => Arc::new(pc),
         };

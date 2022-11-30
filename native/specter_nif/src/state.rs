@@ -45,37 +45,37 @@ impl State {
 
     //***** API
 
-    pub(crate) fn add_api(&mut self, uuid: &String, api: API) -> &mut State {
-        self.apis.insert(uuid.clone(), Arc::new(api));
+    pub(crate) fn add_api(&mut self, uuid: &str, api: API) -> &mut State {
+        self.apis.insert(uuid.to_owned(), Arc::new(api));
         self
     }
 
-    pub(crate) fn get_api<'a>(&self, uuid: Term<'a>) -> Option<&Arc<API>> {
-        let id: &String = &uuid.clone().decode().unwrap();
+    pub(crate) fn get_api(&self, uuid: Term) -> Option<&Arc<API>> {
+        let id: &String = &uuid.decode().unwrap();
         self.apis.get(id)
     }
 
     //***** MediaEngine
 
-    pub(crate) fn add_media_engine(&mut self, uuid: &String, engine: MediaEngine) -> &mut State {
-        self.media_engines.insert(uuid.clone(), engine);
+    pub(crate) fn add_media_engine(&mut self, uuid: &str, engine: MediaEngine) -> &mut State {
+        self.media_engines.insert(uuid.to_owned(), engine);
         self
     }
 
-    pub(crate) fn get_media_engine<'a>(&mut self, uuid: Term<'a>) -> Option<&MediaEngine> {
+    pub(crate) fn get_media_engine(&mut self, uuid: Term) -> Option<&MediaEngine> {
         // This could stand some error handling. The match implementation
         // fails with "creates a temporary which is freed while still in use."
-        let id: &String = &uuid.clone().decode().unwrap();
+        let id: &String = &uuid.decode().unwrap();
         self.media_engines.get(id)
     }
 
-    pub(crate) fn get_media_engine_mut<'a>(&mut self, uuid: Term<'a>) -> Option<&mut MediaEngine> {
-        let id: &String = &uuid.clone().decode().unwrap();
+    pub(crate) fn get_media_engine_mut(&mut self, uuid: Term) -> Option<&mut MediaEngine> {
+        let id: &String = &uuid.decode().unwrap();
         self.media_engines.get_mut(id)
     }
 
-    pub(crate) fn remove_media_engine<'a>(&mut self, uuid: Term<'a>) -> Option<MediaEngine> {
-        let id: &String = &uuid.clone().decode().unwrap();
+    pub(crate) fn remove_media_engine(&mut self, uuid: Term) -> Option<MediaEngine> {
+        let id: &String = &uuid.decode().unwrap();
         self.media_engines.remove(id)
     }
 
@@ -83,53 +83,51 @@ impl State {
 
     pub(crate) fn add_peer_connection(
         &mut self,
-        uuid: &String,
+        uuid: &str,
         pc: Sender<peer_connection::Msg>,
     ) -> &mut State {
-        self.peer_connections.insert(uuid.clone(), pc);
+        self.peer_connections.insert(uuid.to_owned(), pc);
         self
     }
 
-    pub(crate) fn get_peer_connection<'a>(
-        &self,
-        uuid: Term<'a>,
-    ) -> Option<&Sender<peer_connection::Msg>> {
-        let id: &String = &uuid.clone().decode().unwrap();
+    pub(crate) fn get_peer_connection(&self, uuid: Term) -> Option<&Sender<peer_connection::Msg>> {
+        let id: &String = &uuid.decode().unwrap();
         self.peer_connections.get(id)
     }
 
-    pub(crate) fn remove_peer_connection<'a>(
+    pub(crate) fn remove_peer_connection(
         &mut self,
-        uuid: Term<'a>,
+        uuid: Term,
     ) -> Option<Sender<peer_connection::Msg>> {
-        let id: &String = &uuid.clone().decode().unwrap();
+        let id: &String = &uuid.decode().unwrap();
         self.peer_connections.remove(id)
     }
 
     //***** Registry
 
-    pub(crate) fn add_registry(&mut self, uuid: &String, registry: Registry) -> &mut State {
-        self.registries.insert(uuid.clone(), registry);
+    pub(crate) fn add_registry(&mut self, uuid: &str, registry: Registry) -> &mut State {
+        self.registries.insert(uuid.to_owned(), registry);
         self
     }
 
-    pub(crate) fn get_registry<'a>(&mut self, uuid: Term<'a>) -> Option<&Registry> {
-        let id: &String = &uuid.clone().decode().unwrap();
+    pub(crate) fn get_registry(&mut self, uuid: Term) -> Option<&Registry> {
+        let id: &String = &uuid.decode().unwrap();
         self.registries.get(id)
     }
 
-    pub(crate) fn remove_registry<'a>(&mut self, uuid: Term<'a>) -> Option<Registry> {
-        let id: &String = &uuid.clone().decode().unwrap();
+    pub(crate) fn remove_registry(&mut self, uuid: Term) -> Option<Registry> {
+        let id: &String = &uuid.decode().unwrap();
         self.registries.remove(id)
     }
 
     //***** Track
     pub(crate) fn add_track_local_static_sample(
         &mut self,
-        uuid: &String,
+        uuid: &str,
         track: Arc<TrackLocalStaticSample>,
     ) -> &mut State {
-        self.local_static_sample_tracks.insert(uuid.clone(), track);
+        self.local_static_sample_tracks
+            .insert(uuid.to_owned(), track);
         self
     }
 
@@ -162,7 +160,7 @@ fn init<'a>(env: Env<'a>, opts: Term<'a>) -> Term<'a> {
 }
 
 #[rustler::nif(name = "config")]
-fn get_config<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, Atom> {
+fn get_config(env: Env, resource: ResourceArc<Ref>) -> Result<Term, Atom> {
     let state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
@@ -180,7 +178,7 @@ fn get_config<'a>(env: Env<'a>, resource: ResourceArc<Ref>) -> Result<Term<'a>, 
 /// - Do we ever interact with it later, or is it just used to configure
 ///   behaviors of RTCPeerConnections?
 #[rustler::nif]
-fn new_media_engine<'a>(resource: ResourceArc<Ref>) -> Result<String, Atom> {
+fn new_media_engine(resource: ResourceArc<Ref>) -> Result<String, Atom> {
     let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
@@ -203,10 +201,7 @@ fn new_media_engine<'a>(resource: ResourceArc<Ref>) -> Result<String, Atom> {
 /// - What the heck is an intercepter registry?
 /// - How is it used later?
 #[rustler::nif]
-fn new_registry<'a>(
-    resource: ResourceArc<Ref>,
-    media_engine_uuid: Term<'a>,
-) -> Result<String, Atom> {
+fn new_registry(resource: ResourceArc<Ref>, media_engine_uuid: Term) -> Result<String, Atom> {
     let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
@@ -295,10 +290,7 @@ fn new_track_local_static_sample<'a>(
 /// creating an API. After that happens, the MediaEngine will no longer be available
 /// in the State hashmap.
 #[rustler::nif]
-fn media_engine_exists<'a>(
-    resource: ResourceArc<Ref>,
-    media_engine_uuid: Term<'a>,
-) -> Result<bool, Atom> {
+fn media_engine_exists(resource: ResourceArc<Ref>, media_engine_uuid: Term) -> Result<bool, Atom> {
     let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
@@ -313,7 +305,7 @@ fn media_engine_exists<'a>(
 /// Returns true or false depending on whether the State hashmap owns an RTCPeerConnection
 /// for the given UUID.
 #[rustler::nif]
-fn peer_connection_exists<'a>(resource: ResourceArc<Ref>, pc_uuid: Term<'a>) -> Result<bool, Atom> {
+fn peer_connection_exists(resource: ResourceArc<Ref>, pc_uuid: Term) -> Result<bool, Atom> {
     let state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,
@@ -330,7 +322,7 @@ fn peer_connection_exists<'a>(resource: ResourceArc<Ref>, pc_uuid: Term<'a>) -> 
 ///
 /// See `media_engine_exists` for Notes.
 #[rustler::nif]
-fn registry_exists<'a>(resource: ResourceArc<Ref>, registry_uuid: Term<'a>) -> Result<bool, Atom> {
+fn registry_exists(resource: ResourceArc<Ref>, registry_uuid: Term) -> Result<bool, Atom> {
     let mut state = match resource.0.lock() {
         Err(_) => return Err(atoms::lock_fail()),
         Ok(guard) => guard,

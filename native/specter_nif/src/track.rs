@@ -25,7 +25,7 @@ pub fn play_from_file_h264<'a>(
         .unwrap()
         .clone();
 
-    let pid = state.pid.clone();
+    let pid = state.pid;
     let mut msg_env = rustler::env::OwnedEnv::new();
     let decoded_path: String = path.decode().unwrap();
 
