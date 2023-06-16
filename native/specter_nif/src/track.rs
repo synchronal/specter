@@ -35,7 +35,7 @@ pub fn play_from_file_h264<'a>(
         // Open a H264 file and start reading using our H264Reader
         let file = File::open(&decoded_path).unwrap();
         let reader = BufReader::new(file);
-        let mut h264 = H264Reader::new(reader);
+        let mut h264 = H264Reader::new(reader, 1_048_576);
 
         log::debug!("Play video from file {}\r", decoded_path);
 
