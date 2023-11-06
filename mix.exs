@@ -37,7 +37,7 @@ defmodule Specter.MixProject do
       {:markdown_formatter, "~> 0.5", only: :dev, runtime: false},
       {:mix_audit, "~> 2.0", only: [:dev], runtime: false},
       {:moar, "~> 1.7", only: [:test]},
-      {:rustler, "~> 0.23"},
+      {:rustler, "~> 0.30", github: "rusterlium/rustler", sparse: "rustler_mix", ref: "7cbfdd2"},
       {:uuid, "~> 1.1", only: [:test]}
     ]
   end
@@ -51,6 +51,7 @@ defmodule Specter.MixProject do
     [
       plt_add_apps: [:ex_unit, :mix],
       plt_add_deps: :app_tree,
+      plt_core_path: "_build/#{Mix.env()}",
       plt_file: {:no_warn, "priv/plts/#{otp_version()}/dialyzer.plt"}
     ]
   end
