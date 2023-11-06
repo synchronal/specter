@@ -623,9 +623,11 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
 
         let pc = match pc.await {
             Err(_) => {
-                msg_env.send_and_clear(&pid, |env| {
-                    (atoms::peer_connection_error(), &pc_uuid).encode(env)
-                });
+                msg_env
+                    .send_and_clear(&pid, |env| {
+                        (atoms::peer_connection_error(), &pc_uuid).encode(env)
+                    })
+                    .unwrap();
                 return;
             }
             Ok(pc) => Arc::new(pc),
@@ -635,9 +637,11 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
             let (tx, rx) = channel::<Msg>(1000);
             let mut state = resource.0.lock().unwrap();
             state.add_peer_connection(&uuid, tx);
-            msg_env.send_and_clear(&state.pid, |env| {
-                (atoms::peer_connection_ready(), &uuid).encode(env)
-            });
+            msg_env
+                .send_and_clear(&state.pid, |env| {
+                    (atoms::peer_connection_ready(), &uuid).encode(env)
+                })
+                .unwrap();
 
             rx
         };
@@ -649,10 +653,12 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                     let candidate = c.to_json().unwrap();
                     let json = serde_json::to_string(&candidate).unwrap();
 
-                    msg_env.send_and_clear(&pid, |env| {
-                        // (atoms::ice_candidate(), &uuid, json).encode(env)
-                        (atoms::ice_candidate(), &pc_uuid, json).encode(env)
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| {
+                            // (atoms::ice_candidate(), &uuid, json).encode(env)
+                            (atoms::ice_candidate(), &pc_uuid, json).encode(env)
+                        })
+                        .unwrap_or(());
                 }
             })
         }));
@@ -667,12 +673,16 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                     let lock = pc.clone();
                     let resp = lock.add_ice_candidate(candidate).await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => {
-                            (atoms::candidate_error(), &pc_uuid, err.to_string()).encode(env)
-                        }
-                        Ok(()) => (atoms::ok(), &pc_uuid, atoms::add_ice_candidate()).encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            Err(err) => {
+                                (atoms::candidate_error(), &pc_uuid, err.to_string()).encode(env)
+                            }
+                            Ok(()) => {
+                                (atoms::ok(), &pc_uuid, atoms::add_ice_candidate()).encode(env)
+                            }
+                        })
+                        .unwrap();
                 }
                 Some(Msg::AddTrack(track_uuid, track)) => {
                     let lock = pc.clone();
@@ -680,245 +690,289 @@ fn spawn_rtc_peer_connection(resource: ResourceArc<Ref>, api: Arc<API>, uuid: St
                     let sender_uuid = gen_uuid();
 
                     rtp_senders.insert(sender_uuid.clone(), sender);
-                    msg_env.send_and_clear(&pid, |env| {
-                        (atoms::rtp_sender(), &pc_uuid, &track_uuid, sender_uuid).encode(env)
-                    })
+                    msg_env
+                        .send_and_clear(&pid, |env| {
+                            (atoms::rtp_sender(), &pc_uuid, &track_uuid, sender_uuid).encode(env)
+                        })
+                        .unwrap();
                 }
                 Some(Msg::CreateAnswer(opts)) => {
                     let lock = pc.clone();
                     let resp = lock.create_answer(opts).await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (atoms::answer_error(), &pc_uuid, err.to_string()).encode(env),
-                        Ok(answer) => (
-                            atoms::answer(),
-                            &pc_uuid,
-                            serde_json::to_string(&answer).unwrap(),
-                        )
-                            .encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            Err(err) => {
+                                (atoms::answer_error(), &pc_uuid, err.to_string()).encode(env)
+                            }
+                            Ok(answer) => (
+                                atoms::answer(),
+                                &pc_uuid,
+                                serde_json::to_string(&answer).unwrap(),
+                            )
+                                .encode(env),
+                        })
+                        .unwrap();
                 }
                 Some(Msg::CreateDataChannel(label)) => {
                     let lock = pc.clone();
                     let resp = lock.create_data_channel(&label, None).await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (atoms::offer_error(), &pc_uuid, err.to_string()).encode(env),
-                        Ok(_data_channel) => (atoms::data_channel_created(), &pc_uuid).encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            Err(err) => {
+                                (atoms::offer_error(), &pc_uuid, err.to_string()).encode(env)
+                            }
+                            Ok(_data_channel) => {
+                                (atoms::data_channel_created(), &pc_uuid).encode(env)
+                            }
+                        })
+                        .unwrap();
                 }
                 Some(Msg::CreateOffer(opts)) => {
                     let lock = pc.clone();
                     let resp = lock.create_offer(opts).await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (atoms::offer_error(), &pc_uuid, err.to_string()).encode(env),
-                        Ok(offer) => (
-                            atoms::offer(),
-                            &pc_uuid,
-                            serde_json::to_string(&offer).unwrap(),
-                        )
-                            .encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            Err(err) => {
+                                (atoms::offer_error(), &pc_uuid, err.to_string()).encode(env)
+                            }
+                            Ok(offer) => (
+                                atoms::offer(),
+                                &pc_uuid,
+                                serde_json::to_string(&offer).unwrap(),
+                            )
+                                .encode(env),
+                        })
+                        .unwrap();
                 }
                 Some(Msg::GetCurrentLocalDescription) => {
                     let lock = pc.clone();
                     let resp = lock.current_local_description().await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        None => (
-                            atoms::current_local_description(),
-                            &pc_uuid,
-                            rustler::types::atom::nil(),
-                        )
-                            .encode(env),
-                        Some(desc) => (
-                            atoms::current_local_description(),
-                            &pc_uuid,
-                            serde_json::to_string(&desc).unwrap(),
-                        )
-                            .encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            None => (
+                                atoms::current_local_description(),
+                                &pc_uuid,
+                                rustler::types::atom::nil(),
+                            )
+                                .encode(env),
+                            Some(desc) => (
+                                atoms::current_local_description(),
+                                &pc_uuid,
+                                serde_json::to_string(&desc).unwrap(),
+                            )
+                                .encode(env),
+                        })
+                        .unwrap();
                 }
                 Some(Msg::GetLocalDescription) => {
                     let lock = pc.clone();
                     let resp = lock.local_description().await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        None => (
-                            atoms::local_description(),
-                            &pc_uuid,
-                            rustler::types::atom::nil(),
-                        )
-                            .encode(env),
-                        Some(desc) => (
-                            atoms::local_description(),
-                            &pc_uuid,
-                            serde_json::to_string(&desc).unwrap(),
-                        )
-                            .encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            None => (
+                                atoms::local_description(),
+                                &pc_uuid,
+                                rustler::types::atom::nil(),
+                            )
+                                .encode(env),
+                            Some(desc) => (
+                                atoms::local_description(),
+                                &pc_uuid,
+                                serde_json::to_string(&desc).unwrap(),
+                            )
+                                .encode(env),
+                        })
+                        .unwrap();
                 }
                 Some(Msg::GetPendingLocalDescription) => {
                     let lock = pc.clone();
                     let resp = lock.pending_local_description().await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        None => (
-                            atoms::pending_local_description(),
-                            &pc_uuid,
-                            rustler::types::atom::nil(),
-                        )
-                            .encode(env),
-                        Some(desc) => (
-                            atoms::pending_local_description(),
-                            &pc_uuid,
-                            serde_json::to_string(&desc).unwrap(),
-                        )
-                            .encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            None => (
+                                atoms::pending_local_description(),
+                                &pc_uuid,
+                                rustler::types::atom::nil(),
+                            )
+                                .encode(env),
+                            Some(desc) => (
+                                atoms::pending_local_description(),
+                                &pc_uuid,
+                                serde_json::to_string(&desc).unwrap(),
+                            )
+                                .encode(env),
+                        })
+                        .unwrap();
                 }
                 Some(Msg::GetCurrentRemoteDescription) => {
                     let lock = pc.clone();
                     let resp = lock.current_remote_description().await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        None => (
-                            atoms::current_remote_description(),
-                            &pc_uuid,
-                            rustler::types::atom::nil(),
-                        )
-                            .encode(env),
-                        Some(desc) => (
-                            atoms::current_remote_description(),
-                            &pc_uuid,
-                            serde_json::to_string(&desc).unwrap(),
-                        )
-                            .encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            None => (
+                                atoms::current_remote_description(),
+                                &pc_uuid,
+                                rustler::types::atom::nil(),
+                            )
+                                .encode(env),
+                            Some(desc) => (
+                                atoms::current_remote_description(),
+                                &pc_uuid,
+                                serde_json::to_string(&desc).unwrap(),
+                            )
+                                .encode(env),
+                        })
+                        .unwrap();
                 }
                 Some(Msg::GetRemoteDescription) => {
                     let lock = pc.clone();
                     let resp = lock.remote_description().await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        None => (
-                            atoms::remote_description(),
-                            &pc_uuid,
-                            rustler::types::atom::nil(),
-                        )
-                            .encode(env),
-                        Some(desc) => (
-                            atoms::remote_description(),
-                            &pc_uuid,
-                            serde_json::to_string(&desc).unwrap(),
-                        )
-                            .encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            None => (
+                                atoms::remote_description(),
+                                &pc_uuid,
+                                rustler::types::atom::nil(),
+                            )
+                                .encode(env),
+                            Some(desc) => (
+                                atoms::remote_description(),
+                                &pc_uuid,
+                                serde_json::to_string(&desc).unwrap(),
+                            )
+                                .encode(env),
+                        })
+                        .unwrap();
                 }
                 Some(Msg::GetPendingRemoteDescription) => {
                     let lock = pc.clone();
                     let resp = lock.pending_remote_description().await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        None => (
-                            atoms::pending_remote_description(),
-                            &pc_uuid,
-                            rustler::types::atom::nil(),
-                        )
-                            .encode(env),
-                        Some(desc) => (
-                            atoms::pending_remote_description(),
-                            &pc_uuid,
-                            serde_json::to_string(&desc).unwrap(),
-                        )
-                            .encode(env),
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            None => (
+                                atoms::pending_remote_description(),
+                                &pc_uuid,
+                                rustler::types::atom::nil(),
+                            )
+                                .encode(env),
+                            Some(desc) => (
+                                atoms::pending_remote_description(),
+                                &pc_uuid,
+                                serde_json::to_string(&desc).unwrap(),
+                            )
+                                .encode(env),
+                        })
+                        .unwrap();
                 }
                 Some(Msg::GetStats) => {
                     let lock = pc.clone();
                     let stats = lock.get_stats().await;
 
-                    msg_env.send_and_clear(&pid, |env| {
-                        (
-                            atoms::stats(),
-                            &pc_uuid,
-                            serde_json::to_string(&stats).unwrap(),
-                        )
-                            .encode(env)
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| {
+                            (
+                                atoms::stats(),
+                                &pc_uuid,
+                                serde_json::to_string(&stats).unwrap(),
+                            )
+                                .encode(env)
+                        })
+                        .unwrap();
                 }
                 Some(Msg::SetLocalDescription(session)) => {
                     let lock = pc.clone();
                     let resp = lock.set_local_description(session).await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (
-                            atoms::invalid_local_description(),
-                            &pc_uuid,
-                            err.to_string(),
-                        )
-                            .encode(env),
-                        Ok(_) => {
-                            (atoms::ok(), &pc_uuid, atoms::set_local_description()).encode(env)
-                        }
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            Err(err) => (
+                                atoms::invalid_local_description(),
+                                &pc_uuid,
+                                err.to_string(),
+                            )
+                                .encode(env),
+                            Ok(_) => {
+                                (atoms::ok(), &pc_uuid, atoms::set_local_description()).encode(env)
+                            }
+                        })
+                        .unwrap();
                 }
                 Some(Msg::SetRemoteDescription(session)) => {
                     let lock = pc.clone();
                     let resp = lock.set_remote_description(session).await;
 
-                    msg_env.send_and_clear(&pid, |env| match resp {
-                        Err(err) => (
-                            atoms::invalid_remote_description(),
-                            &pc_uuid,
-                            err.to_string(),
-                        )
-                            .encode(env),
-                        Ok(_) => {
-                            (atoms::ok(), &pc_uuid, atoms::set_remote_description()).encode(env)
-                        }
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| match resp {
+                            Err(err) => (
+                                atoms::invalid_remote_description(),
+                                &pc_uuid,
+                                err.to_string(),
+                            )
+                                .encode(env),
+                            Ok(_) => {
+                                (atoms::ok(), &pc_uuid, atoms::set_remote_description()).encode(env)
+                            }
+                        })
+                        .unwrap();
                 }
                 Some(Msg::IceConnectionState) => {
                     let lock = pc.clone();
                     let resp = lock.ice_connection_state();
                     let state = peer_conn_state::IceConnectionState::from(&resp);
-                    msg_env.send_and_clear(&pid, |env| {
-                        (atoms::ice_connection_state(), &pc_uuid, state).encode(env)
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| {
+                            (atoms::ice_connection_state(), &pc_uuid, state).encode(env)
+                        })
+                        .unwrap();
                 }
                 Some(Msg::IceGatheringState) => {
                     let lock = pc.clone();
                     let resp = lock.ice_gathering_state();
                     let state = peer_conn_state::IceGatheringState::from(&resp);
-                    msg_env.send_and_clear(&pid, |env| {
-                        (atoms::ice_gathering_state(), &pc_uuid, state).encode(env)
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| {
+                            (atoms::ice_gathering_state(), &pc_uuid, state).encode(env)
+                        })
+                        .unwrap();
                 }
                 Some(Msg::SignalingState) => {
                     let lock = pc.clone();
                     let resp = lock.signaling_state();
                     let state = peer_conn_state::SignalingState::from(&resp);
-                    msg_env.send_and_clear(&pid, |env| {
-                        (atoms::signaling_state(), &pc_uuid, state).encode(env)
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| {
+                            (atoms::signaling_state(), &pc_uuid, state).encode(env)
+                        })
+                        .unwrap();
                 }
                 Some(Msg::ConnectionState) => {
                     let lock = pc.clone();
                     let resp = lock.connection_state();
                     let state = peer_conn_state::ConnectionState::from(&resp);
-                    msg_env.send_and_clear(&pid, |env| {
-                        (atoms::connection_state(), &pc_uuid, state).encode(env)
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| {
+                            (atoms::connection_state(), &pc_uuid, state).encode(env)
+                        })
+                        .unwrap();
                 }
                 None => break,
-            }
+            };
         }
 
         let state = resource.0.lock().unwrap();
-        msg_env.send_and_clear(&state.pid, |env| {
-            (atoms::peer_connection_closed(), &pc_uuid).encode(env)
-        });
+        msg_env
+            .send_and_clear(&state.pid, |env| {
+                (atoms::peer_connection_closed(), &pc_uuid).encode(env)
+            })
+            .unwrap();
     });
 }

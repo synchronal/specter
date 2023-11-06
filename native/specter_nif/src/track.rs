@@ -48,9 +48,11 @@ pub fn play_from_file_h264<'a>(
                 Ok(nal) => nal,
                 Err(err) => {
                     log::debug!("All video frames parsed and sent: {:?}\r", err);
-                    msg_env.send_and_clear(&pid, |env| {
-                        (atoms::playback_finished(), &decoded_track_uuid).encode(env)
-                    });
+                    msg_env
+                        .send_and_clear(&pid, |env| {
+                            (atoms::playback_finished(), &decoded_track_uuid).encode(env)
+                        })
+                        .unwrap();
                     break;
                 }
             };
