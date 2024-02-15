@@ -15,21 +15,31 @@ fi
 
 cecho --green "\n▸" --bright-bold-cyan "Running initial doctor checks..."
 
-check "asdf: installed" \
-  "command -v asdf" \
+check "tool-versions: installed" \
+  "command -v mise || command -v asdf" \
   "open 'https://asdf-vm.com/#/core-manage-asdf'"
 
-check "asdf: erlang plugin installed" \
-  "asdf plugin-list | grep erlang" \
-  "asdf plugin-add erlang"
+if command -v mise; then
+  TOOLS="mise"
+elif command -v asdf; then
+  TOOLS="asdf"
+fi
 
-check "asdf: elixir plugin installed" \
-  "asdf plugin-list | grep elixir" \
-  "asdf plugin-add elixir"
+check "tool-versions: erlang plugin installed" \
+  "${TOOLS} plugin-list | grep erlang" \
+  "${TOOLS} plugin add erlang"
 
-check "asdf: tools are installed" \
-  "asdf which erl > /dev/null && asdf which elixir > /dev/null" \
-  "asdf install"
+check "tool-versions: elixir plugin installed" \
+  "${TOOLS} plugin-list | grep elixir" \
+  "${TOOLS} plugin add elixir"
+
+check "tool-versions: postgres plugin installed" \
+  "${TOOLS} plugin-list | grep postgres" \
+  "${TOOLS} plugin add postgres"
+
+check "tool-versions: tools are installed" \
+  "${TOOLS} which erl > /dev/null && ${TOOLS} which elixir > /dev/null" \
+  "${TOOLS} install"
 
 echo ""
 
