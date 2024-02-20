@@ -37,7 +37,7 @@ defmodule Specter.MixProject do
       {:markdown_formatter, "~> 0.5", only: :dev, runtime: false},
       {:mix_audit, "~> 2.0", only: [:dev], runtime: false},
       {:moar, "~> 1.7", only: [:test]},
-      {:rustler, "~> 0.30", github: "rusterlium/rustler", sparse: "rustler_mix", ref: "7cbfdd2"},
+      {:rustler, "~> 0.31"},
       {:uuid, "~> 1.1", only: [:test]}
     ]
   end
