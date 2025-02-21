@@ -3,8 +3,7 @@ use crate::codec_capability::RtpCodecCapability;
 use crate::config::Config;
 use crate::peer_connection;
 use crate::util::gen_uuid;
-use rustler::types::pid::Pid;
-use rustler::{Atom, Encoder, Env, ResourceArc, Term};
+use rustler::{Atom, Encoder, Env, LocalPid, ResourceArc, Term};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::Sender;
@@ -21,7 +20,7 @@ pub struct Ref(pub(crate) Arc<Mutex<State>>);
 
 pub struct State {
     pub config: Config,
-    pub pid: Pid,
+    pub pid: LocalPid,
 
     apis: HashMap<String, Arc<API>>,
     media_engines: HashMap<String, MediaEngine>,
@@ -31,7 +30,7 @@ pub struct State {
 }
 
 impl State {
-    fn new(config: Config, pid: Pid) -> Self {
+    fn new(config: Config, pid: LocalPid) -> Self {
         State {
             config,
             pid,
