@@ -3,7 +3,7 @@ use crate::codec_capability::RtpCodecCapability;
 use crate::config::Config;
 use crate::peer_connection;
 use crate::util::gen_uuid;
-use rustler::{Atom, Encoder, Env, LocalPid, ResourceArc, Term};
+use rustler::{Atom, Encoder, Env, LocalPid, Resource, ResourceArc, Term};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::Sender;
@@ -17,6 +17,9 @@ use webrtc::track::track_local::track_local_static_sample::TrackLocalStaticSampl
 // The resource which will be wrapped in an ResourceArc and returned to
 // Elixir as a reference.
 pub struct Ref(pub(crate) Arc<Mutex<State>>);
+
+#[rustler::resource_impl]
+impl Resource for Ref {}
 
 pub struct State {
     pub config: Config,
@@ -136,11 +139,6 @@ impl State {
     ) -> Option<&Arc<TrackLocalStaticSample>> {
         self.local_static_sample_tracks.get(uuid)
     }
-}
-
-pub fn load(env: Env) -> bool {
-    rustler::resource!(Ref, env);
-    true
 }
 
 /// Initialize the NIF, returning a reference to Elixir that can be
