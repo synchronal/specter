@@ -5,18 +5,4 @@ set -o pipefail
 
 trap "exit" INT
 
-source ".medic/_support/doctor.sh"
-
-check "Check formatting" "bin/dev/format --check" "bin/dev/format --all"
-check "Check rust formatting" "(cd native/specter_nif && cargo fmt --check)" "(cd native/specter_nif && cargo fmt)"
-step "Auditing Elixir deps" "mix deps.audit"
-step "Credo" "mix credo --strict"
-step "Dialyzer" "mix dialyzer"
-check "Checking for unused deps" "mix deps.unlock --check-unused" "mix deps.clean --unused --unlock"
-
-step_header "Cargo clippy" "(cd native/specter_nif && cargo clippy)"
-echo
-set +e
-(cd native/specter_nif && cargo clippy)
-set -e
-
+medic audit

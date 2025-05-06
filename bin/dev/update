@@ -4,4 +4,4 @@ set -e
 
 trap "exit" INT
 
-elixir -r .medic/require.exs -e "Medic.Update.run()" $*
+medic test

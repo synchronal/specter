@@ -4,43 +4,4 @@ set -e
 set -u
 set -o pipefail
 
-source ".medic/_support/doctor.sh"
-
-# run doctor in home directory if present
-if [[ -f "${HOME}/bin/dev/doctor" ]]; then
-  if ! step "Found a doctor script in home directory" "pushd ${HOME} > /dev/null && ./bin/dev/doctor && popd > /dev/null"; then
-    exit 1
-  fi
-fi
-
-cecho --green "\n▸" --bright-bold-cyan "Running initial doctor checks..."
-
-check "tool-versions: installed" \
-  "command -v mise || command -v asdf" \
-  "open 'https://asdf-vm.com/#/core-manage-asdf'"
-
-if command -v mise; then
-  TOOLS="mise"
-elif command -v asdf; then
-  TOOLS="asdf"
-fi
-
-check "tool-versions: erlang plugin installed" \
-  "${TOOLS} plugin-list | grep erlang" \
-  "${TOOLS} plugin add erlang"
-
-check "tool-versions: elixir plugin installed" \
-  "${TOOLS} plugin-list | grep elixir" \
-  "${TOOLS} plugin add elixir"
-
-check "tool-versions: postgres plugin installed" \
-  "${TOOLS} plugin-list | grep postgres" \
-  "${TOOLS} plugin add postgres"
-
-check "tool-versions: tools are installed" \
-  "${TOOLS} which erl > /dev/null && ${TOOLS} which elixir > /dev/null" \
-  "${TOOLS} install"
-
-echo ""
-
-elixir -r .medic/require.exs -e "Medic.Doctor.run()" $*
+medic doc

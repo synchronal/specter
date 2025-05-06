@@ -1,0 +1,57 @@
+[doctor]
+checks = [
+  {check = "tool-versions", command = "plugin-installed", args = {plugin = "elixir"}},
+  {check = "tool-versions", command = "plugin-installed", args = {plugin = "erlang"}},
+  {check = "tool-versions", command = "plugin-installed", args = {plugin = "rust"}},
+  {check = "tool-versions", command = "package-installed", args = {plugin = "elixir"}},
+  {check = "tool-versions", command = "package-installed", args = {plugin = "erlang"}},
+  {check = "tool-versions", command = "package-installed", args = {plugin = "rust"}},
+  {check = "elixir", command = "local-hex"},
+  {check = "elixir", command = "local-rebar"},
+  {check = "elixir", command = "packages-installed"},
+
+]
+
+[test]
+checks = [
+  {name = "elixir: tests", shell = "mix test --color --warnings-as-errors", verbose = true},
+  {name = "elixir: check for warnings", shell = "mix compile --force --warnings-as-errors", verbose = true},
+]
+
+[audit]
+checks = [
+  {name = "elixir: check formatting", shell = "mix format --check-formatted"},
+  {step = "elixir", command = "credo"},
+  {step = "elixir", command = "dialyzer"},
+  {name = "elixir: audit-deps", shell = "mix deps.audit --ignore-advisory-ids GHSA-vq52-99r9-h5pw --color=always", verbose = true},
+  {check = "elixir", command = "unused-deps"},
+  {check = "rust", command = "format-check", cd = "native/specter_nif"},
+  {step = "rust", command = "clippy", cd = "native/specter_nif"},
+
+]
+
+[outdated]
+checks = [
+  {check = "elixir"},
+  {check = "rust", cd = "native/specter_nif"},
+]
+
+[update]
+steps = [
+  {step = "git", command = "pull"},
+  {doctor = {}},
+  {step = "elixir", command = "get-deps"},
+  {step = "elixir", command = "compile-deps", args = { mix-env = "dev"}},
+  {step = "elixir", command = "compile-deps", args = { mix-env = "test"}},
+]
+
+[shipit]
+steps = [
+  {audit = {}},
+  {update = {}},
+  {test = {}},
+  {step = "git", command = "push"},
+  {step = "github", command = "link-to-actions", verbose = true},
+
+]
+

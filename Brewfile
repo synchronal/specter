@@ -1,0 +1,5 @@
+brew 'synchronal/tap/medic'
+brew 'synchronal/tap/medic-ext-elixir'
+brew 'synchronal/tap/medic-ext-git'
+brew 'synchronal/tap/medic-ext-rust'
+brew 'synchronal/tap/medic-ext-tool-versions'
