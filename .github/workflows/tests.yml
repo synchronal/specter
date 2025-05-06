@@ -10,7 +10,7 @@ on:
       - main
 env:
   ELIXIR_VERSION: "1.18.3"
-  OTP_VERSION: "27.3"
+  OTP_VERSION: "27.3.3"
   RUST_VERSION: "1.86.0"
 jobs:
   build_test:
