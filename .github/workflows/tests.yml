@@ -9,9 +9,9 @@ on:
     branches:
       - main
 env:
-  ELIXIR_VERSION: "1.18.3"
-  OTP_VERSION: "27.3.3"
-  RUST_VERSION: "1.86.0"
+  ELIXIR_VERSION: "1.19.5"
+  OTP_VERSION: "28.3.1"
+  RUST_VERSION: "1.93.0"
 jobs:
   build_test:
     name: Build Test
