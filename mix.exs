@@ -4,6 +4,18 @@ defmodule Specter.MixProject do
   @scm_url "https://github.com/synchronal/specter"
   @version "0.5.0"
 
+  def application do
+    [
+      extra_applications: [:logger]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [credo: :test, dialyzer: :test, docs: :dev]
+    ]
+  end
+
   def project do
     [
       app: :specter,
@@ -15,18 +27,13 @@ defmodule Specter.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       homepage_url: @scm_url,
       package: package(),
-      preferred_cli_env: [credo: :test, dialyzer: :test, docs: :dev],
       source_url: @scm_url,
       start_permanent: Mix.env() == :prod,
       version: @version
     ]
   end
 
-  def application do
-    [
-      extra_applications: [:logger]
-    ]
-  end
+  # # #
 
   defp deps do
     [
