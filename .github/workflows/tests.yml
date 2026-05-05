@@ -10,8 +10,8 @@ on:
       - main
 env:
   ELIXIR_VERSION: "1.19.5"
-  OTP_VERSION: "28.3.1"
-  RUST_VERSION: "1.93.0"
+  OTP_VERSION: "28.5"
+  RUST_VERSION: "1.95.0"
 jobs:
   build_test:
     name: Build Test
