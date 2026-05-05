@@ -19,7 +19,7 @@ jobs:
     env:
       MIX_ENV: test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
@@ -27,12 +27,12 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: deps
           key: ${{ runner.os }}-test-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -41,7 +41,7 @@ jobs:
             priv/native
           key: ${{ runner.os }}-test-cargo-v2-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_VERSION }}
       - name: Cache _build
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: _build
           key: ${{ runner.os }}-test-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -57,7 +57,7 @@ jobs:
     env:
       MIX_ENV: dev
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
@@ -70,12 +70,12 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           override: true
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: deps
           key: ${{ runner.os }}-dev-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -84,7 +84,7 @@ jobs:
             priv/native
           key: ${{ runner.os }}-dev-cargo-v2-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_VERSION }}
       - name: Cache _build
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: _build
           key: ${{ runner.os }}-dev-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -101,7 +101,7 @@ jobs:
     env:
       MIX_ENV: test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
@@ -114,12 +114,12 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           override: true
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: deps
           key: ${{ runner.os }}-test-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -128,7 +128,7 @@ jobs:
             priv/native
           key: ${{ runner.os }}-test-cargo-v2-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_VERSION }}
       - name: Cache _build
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: _build
           key: ${{ runner.os }}-test-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -142,7 +142,7 @@ jobs:
     env:
       MIX_ENV: test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
@@ -150,12 +150,12 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: deps
           key: ${{ runner.os }}-test-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -164,12 +164,12 @@ jobs:
             priv/native
           key: ${{ runner.os }}-test-cargo-v2-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_VERSION }}
       - name: Cache _build
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: _build
           key: ${{ runner.os }}-test-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache PLTs
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: priv/plts
           key: ${{ runner.os }}-test-dialyxir-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -186,7 +186,7 @@ jobs:
     env:
       MIX_ENV: dev
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
@@ -194,12 +194,12 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: deps
           key: ${{ runner.os }}-dev-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -208,7 +208,7 @@ jobs:
             priv/native
           key: ${{ runner.os }}-dev-cargo-v2-${{ hashFiles('**/Cargo.lock') }}}-${{ env.RUST_VERSION }}
       - name: Cache _build
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: _build
           key: ${{ runner.os }}-dev-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
@@ -230,7 +230,7 @@ jobs:
       - audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
@@ -238,12 +238,12 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           version-type: "strict"
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: deps
           key: ${{ runner.os }}-dev-deps-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Cache cargo
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -252,12 +252,12 @@ jobs:
             priv/native
           key: ${{ runner.os }}-dev-cargo-v2-${{ hashFiles('**/Cargo.lock') }}}-${{ env.RUST_VERSION }}
       - name: Cache _build
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: _build
           key: ${{ runner.os }}-dev-build-v1-${{ hashFiles('**/mix.lock', '.tool-versions') }}
       - name: Publish to Hex
-        uses: synchronal/hex-publish-action@v3
+        uses: synchronal/hex-publish-action@v4
         with:
           name: specter
           key: ${{ secrets.HEX_PM_KEY }}
